@@ -30,19 +30,25 @@ export default function MobileNav() {
             <Link
               key={href}
               href={href}
-              className={`relative flex flex-col items-center justify-center gap-1 tap-highlight-none transition-colors duration-200 ${
+              className={`relative flex min-w-0 flex-col items-center justify-center gap-1 tap-highlight-none transition-colors duration-200 ${
                 active ? "text-leaf-700" : "text-bark-400"
               }`}
             >
               <span className="relative">
                 <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 2} />
                 {href === "/cart" && cartCount > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-tangerine-500 px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-tangerine-500 px-1 text-[12px] font-bold text-white">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}
               </span>
-              <span className={`text-[11px] ${active ? "font-bold" : "font-medium"}`}>{label}</span>
+              <span
+                className={`w-full truncate px-0.5 text-center text-[12px] ${
+                  active ? "font-bold" : "font-medium"
+                }`}
+              >
+                {label}
+              </span>
             </Link>
           );
         })}

@@ -146,12 +146,12 @@ export default function CheckoutPage() {
                   <p className="flex items-center gap-1.5 text-sm font-bold text-bark-800">
                     {a.label}
                     {a.isDefault && (
-                      <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[10px] font-semibold text-leaf-700">
+                      <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[12px] font-semibold text-leaf-700">
                         기본
                       </span>
                     )}
                   </p>
-                  <p className="mt-1.5 text-[13px] leading-snug text-bark-600">
+                  <p className="mt-1.5 text-[16px] leading-snug text-bark-600">
                     {a.address1} {a.address2}
                   </p>
                   <p className="mt-1 text-xs text-bark-400">
@@ -162,14 +162,14 @@ export default function CheckoutPage() {
             </div>
 
             <div className="mt-4">
-              <label className="text-[13px] font-semibold text-bark-700" htmlFor="request">
+              <label className="text-[16px] font-semibold text-bark-700" htmlFor="request">
                 배송 요청사항
               </label>
               <select
                 id="request"
                 value={requestChoice}
                 onChange={(e) => setRequestChoice(e.target.value)}
-                className="mt-1.5 h-11 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm text-bark-700 outline-none focus:border-leaf-400"
+                className="mt-1.5 h-13 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm text-bark-700 outline-none focus:border-leaf-400"
               >
                 {requestOptions.map((o) => (
                   <option key={o} value={o}>{o}</option>
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
                   onChange={(e) => setCustomRequest(e.target.value)}
                   placeholder="요청사항을 입력해주세요"
                   maxLength={50}
-                  className="mt-2 h-11 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm outline-none focus:border-leaf-400"
+                  className="mt-2 h-13 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm outline-none focus:border-leaf-400"
                 />
               )}
             </div>
@@ -299,7 +299,7 @@ export default function CheckoutPage() {
                 >
                   <Icon className={`h-6 w-6 ${payment === value ? "text-leaf-700" : "text-bark-400"}`} />
                   <span className="text-sm font-bold text-bark-800">{label}</span>
-                  <span className="text-[11px] text-bark-400">{note}</span>
+                  <span className="text-[13px] text-bark-400">{note}</span>
                 </button>
               ))}
             </div>
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={placeOrder}
               disabled={placing || visibleItems.length === 0}
-              className="btn-primary mt-5 hidden h-[52px] w-full text-[15px] md:flex"
+              className="btn-primary mt-5 hidden h-14 w-full text-[18px] md:flex"
             >
               {placing ? (
                 <>
@@ -355,7 +355,7 @@ export default function CheckoutPage() {
           type="button"
           onClick={placeOrder}
           disabled={placing || visibleItems.length === 0}
-          className="btn-primary h-12 w-full text-[15px]"
+          className="btn-primary h-13 w-full text-[18px]"
         >
           {placing ? (
             <>

@@ -56,8 +56,11 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
           <User className="h-7 w-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-lg font-extrabold">{demoUser.name}님, 반가워요 🌿</p>
-          <p className="mt-0.5 truncate text-[13px] text-leaf-100">{demoUser.email}</p>
+          <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold">
+            {demoUser.company}
+          </span>
+          <p className="mt-1 text-lg font-extrabold">{demoUser.shortName}님, 반가워요 🌿</p>
+          <p className="mt-0.5 truncate text-[16px] text-leaf-100">{demoUser.email}</p>
         </div>
         <Link
           href="/orders"
@@ -176,7 +179,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
                 </p>
                 <p className="mt-1 text-sm font-bold text-bark-800">{c.name}</p>
                 <p className="mt-0.5 text-xs text-bark-500">{c.description}</p>
-                <p className="mt-2.5 text-[11px] text-bark-400">
+                <p className="mt-2.5 text-[13px] text-bark-400">
                   {formatWon(c.minOrder)} 이상 주문 시 · ~{c.expiresAt.replaceAll("-", ".")}
                 </p>
                 <Ticket className="absolute -right-2 -top-2 h-14 w-14 rotate-12 text-tangerine-200" />
@@ -193,7 +196,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
                   <MapPin className="h-4 w-4 text-leaf-600" />
                   {a.label}
                   {a.isDefault && (
-                    <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[10px] font-semibold text-leaf-700">
+                    <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[12px] font-semibold text-leaf-700">
                       기본 배송지
                     </span>
                   )}

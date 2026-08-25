@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import Footer from "@/components/Footer";
 import ToastViewport from "@/components/ToastViewport";
+import MiraeRibbon from "@/components/mirae/MiraeRibbon";
 import { FONT_LOADER_SCRIPT, VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
 
 export const metadata: Metadata = {
@@ -12,7 +13,19 @@ export const metadata: Metadata = {
     template: "%s | 로컬맘",
   },
   description:
-    "지역 농가와 소비자를 직접 연결하는 신선식품 커머스. 산지직송 제철 먹거리를 오늘 주문하면 내일 신선하게 도착해요.",
+    "지역 농가와 소비자를 직접 연결하는 신선식품 커머스. 산지직송 제철 먹거리를 오늘 주문하면 내일 신선하게 도착해요. 미래에이아이랩(MIRAE AI LAB) 제작 레퍼런스 데모입니다.",
+  applicationName: "로컬맘",
+  authors: [{ name: "미래에이아이랩 (MIRAE AI LAB)" }],
+  creator: "미래에이아이랩 (MIRAE AI LAB)",
+  publisher: "미래에이아이랩 (MIRAE AI LAB)",
+  openGraph: {
+    title: "로컬맘 — 우리 동네, 신선한 한 끼",
+    description:
+      "지역 농가와 소비자를 직접 연결하는 신선식품 커머스 · 미래에이아이랩 제작 레퍼런스 데모",
+    siteName: "로컬맘",
+    locale: "ko_KR",
+    type: "website",
+  },
 };
 
 /**
@@ -39,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           본문 바로가기
         </a>
+        <MiraeRibbon />
         <Header />
         <main id="main" className="flex-1 pb-20 md:pb-0">
           {children}

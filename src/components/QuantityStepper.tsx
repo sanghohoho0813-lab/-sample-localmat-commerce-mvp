@@ -15,8 +15,8 @@ export default function QuantityStepper({
   max?: number;
   size?: "sm" | "md";
 }) {
-  const btn = size === "sm" ? "h-8 w-8" : "h-11 w-11";
-  const label = size === "sm" ? "w-8 text-sm" : "w-10 text-base";
+  const btn = size === "sm" ? "h-10 w-10" : "h-12 w-12";
+  const label = size === "sm" ? "w-9 text-sm" : "w-12 text-base";
   return (
     <div className="inline-flex items-center rounded-xl border border-bark-200 bg-white">
       <button

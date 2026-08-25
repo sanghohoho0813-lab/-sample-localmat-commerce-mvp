@@ -102,7 +102,7 @@ export default function ProductListClient({
               setDrawerOpen(false);
               router.push("/products");
             }}
-            className={`rounded-pill border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
+            className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
               !category && !seasonalOnly
                 ? "border-leaf-600 bg-leaf-600 text-white"
                 : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
@@ -118,7 +118,7 @@ export default function ProductListClient({
                 setDrawerOpen(false);
                 router.push(`/products?category=${c.slug}`);
               }}
-              className={`rounded-pill border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
+              className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
                 category?.id === c.id
                   ? "border-leaf-600 bg-leaf-600 text-white"
                   : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
@@ -155,7 +155,7 @@ export default function ProductListClient({
               key={region}
               type="button"
               onClick={() => toggle(selectedRegions, region, setSelectedRegions)}
-              className={`rounded-pill border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
+              className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
                 selectedRegions.includes(region)
                   ? "border-leaf-600 bg-leaf-600 text-white"
                   : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
@@ -207,12 +207,12 @@ export default function ProductListClient({
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                className="btn-outline h-10 gap-1.5 px-3.5 text-[13px] lg:hidden"
+                className="btn-outline h-12 gap-1.5 px-4 text-[16px] lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 필터
                 {activeFilterCount > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-leaf-600 text-[11px] font-bold text-white">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-leaf-600 text-[13px] font-bold text-white">
                     {activeFilterCount}
                   </span>
                 )}
@@ -223,7 +223,7 @@ export default function ProductListClient({
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
                   aria-label="정렬"
-                  className="h-10 appearance-none rounded-xl border border-bark-200 bg-white pl-9 pr-4 text-[13px] font-medium text-bark-700 outline-none transition-colors focus:border-leaf-400"
+                  className="h-12 appearance-none rounded-xl border border-bark-200 bg-white pl-9 pr-4 text-[16px] font-medium text-bark-700 outline-none transition-colors focus:border-leaf-400"
                 >
                   {sortOptions.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -279,7 +279,7 @@ export default function ProductListClient({
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
-              className="btn-secondary mt-6 h-12 w-full text-[15px]"
+              className="btn-secondary mt-6 h-13 w-full text-[18px]"
             >
               {filtered.length}개 상품 보기
             </button>

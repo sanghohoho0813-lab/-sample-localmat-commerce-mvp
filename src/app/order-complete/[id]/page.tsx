@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { CheckCircle2, MapPin, Truck } from "lucide-react";
+import OrderProgress from "@/components/OrderProgress";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
 import { getProduct } from "@/lib/data/products";
@@ -49,12 +50,16 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         <p className="mt-2 text-sm leading-relaxed text-bark-500">
           산지에서 가장 신선한 상태로 정성껏 준비해 보내드릴게요.
         </p>
-        <p className="mt-4 rounded-pill bg-cream-200 px-4 py-1.5 text-[13px] font-semibold text-bark-600">
+        <p className="mt-4 rounded-pill bg-cream-200 px-4 py-1.5 text-[16px] font-semibold text-bark-600">
           주문번호 {order.orderNumber}
         </p>
       </div>
 
       <div className="mt-8 space-y-4">
+        <section className="rounded-card border border-bark-100 bg-white p-5 pb-6">
+          <OrderProgress status={order.status} />
+        </section>
+
         <section className="rounded-card border border-bark-100 bg-white p-5">
           <h2 className="flex items-center gap-1.5 text-sm font-extrabold text-bark-900">
             <Truck className="h-4 w-4 text-leaf-600" />
@@ -120,10 +125,10 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
-        <Link href="/orders" className="btn-secondary h-12 flex-1 text-[15px]">
+        <Link href="/orders" className="btn-secondary h-12 flex-1 text-[18px]">
           주문 내역 보기
         </Link>
-        <Link href="/products" className="btn-outline h-12 flex-1 text-[15px] font-bold">
+        <Link href="/products" className="btn-outline h-12 flex-1 text-[18px] font-bold">
           쇼핑 계속하기
         </Link>
       </div>

@@ -11,7 +11,7 @@ export default function Logo({ withTagline = false }: { withTagline?: boolean })
         <Sprout className="h-5 w-5 text-leaf-500 transition-transform duration-300 group-hover:rotate-12" />
       </span>
       {withTagline && (
-        <span className="mt-0.5 hidden text-[11px] font-medium text-bark-400 lg:block">
+        <span className="mt-0.5 hidden text-[13px] font-medium text-bark-400 lg:block">
           우리 동네, 신선한 한 끼
         </span>
       )}

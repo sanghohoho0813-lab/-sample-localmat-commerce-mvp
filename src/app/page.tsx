@@ -4,6 +4,7 @@ import HeroBanner from "@/components/HeroBanner";
 import ProductCard from "@/components/ProductCard";
 import FarmCard from "@/components/FarmCard";
 import SectionHeader from "@/components/SectionHeader";
+import MiraeCreditSection from "@/components/mirae/MiraeCreditSection";
 import { categories } from "@/lib/data/categories";
 import { farms } from "@/lib/data/farms";
 import { products } from "@/lib/data/products";
@@ -21,7 +22,7 @@ export default function HomePage() {
   const seasonal = products.filter((p) => p.isSeasonal);
 
   return (
-    <div className="space-y-12 pb-8 md:space-y-16">
+    <div className="space-y-12 md:space-y-16">
       <HeroBanner />
 
       {/* Category quick access (mobile) */}
@@ -158,6 +159,11 @@ export default function HomePage() {
           좋은 농사가 좋은 식탁을 만듭니다
         </p>
       </section>
+
+      {/* 제작사 크레딧 — 위 흰 섹션과 맞붙여 크림 여백이 끼지 않게 합니다. */}
+      <div className="!mt-0">
+        <MiraeCreditSection />
+      </div>
     </div>
   );
 }

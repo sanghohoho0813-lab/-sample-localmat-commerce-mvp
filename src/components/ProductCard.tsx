@@ -75,14 +75,15 @@ export default function ProductCard({
         <h3 className="line-clamp-2 text-sm font-medium leading-snug text-bark-800 transition-colors group-hover:text-leaf-700">
           {product.name} {product.unit}
         </h3>
-        <div className="flex items-baseline gap-1.5">
+        {/* 글자가 커지면 좁은 카드에서 3요소가 한 줄에 안 들어가므로 줄바꿈을 허용합니다. */}
+        <div className="flex flex-wrap items-baseline gap-x-1.5">
           {rate !== null && <span className="text-base font-extrabold text-tangerine-500">{rate}%</span>}
           <span className="text-base font-extrabold text-bark-900">
             {formatPrice(product.price)}
             <span className="text-sm font-bold">원</span>
           </span>
           {product.originalPrice && (
-            <span className="text-xs text-bark-300 line-through">
+            <span className="whitespace-nowrap text-xs text-bark-300 line-through">
               {formatPrice(product.originalPrice)}원
             </span>
           )}

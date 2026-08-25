@@ -99,7 +99,7 @@ export default async function FarmDetailPage({
                 {farm.items.map((item) => (
                   <span
                     key={item}
-                    className="rounded-pill bg-leaf-50 px-3 py-1 text-[13px] font-medium text-leaf-700"
+                    className="rounded-pill bg-leaf-50 px-3 py-1 text-[16px] font-medium text-leaf-700"
                   >
                     {item}
                   </span>

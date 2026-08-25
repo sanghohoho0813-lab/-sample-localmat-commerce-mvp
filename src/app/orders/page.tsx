@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronRight, PackageSearch } from "lucide-react";
+import OrderProgress from "@/components/OrderProgress";
 import ProductImage from "@/components/ProductImage";
 import { getProduct } from "@/lib/data/products";
 import { formatDate, formatWon } from "@/lib/format";
@@ -50,7 +51,7 @@ export default function OrdersPage() {
                     <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${status.className}`}>
                       {status.label}
                     </span>
-                    <span className="text-[13px] text-bark-500">{formatDate(order.createdAt)} 주문</span>
+                    <span className="text-[16px] text-bark-500">{formatDate(order.createdAt)} 주문</span>
                   </div>
                   <Link
                     href={`/order-complete/${order.id}`}
@@ -60,6 +61,12 @@ export default function OrdersPage() {
                     <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 </header>
+
+                {order.status !== "cancelled" && (
+                  <div className="border-b border-bark-100 px-5 py-5">
+                    <OrderProgress status={order.status} />
+                  </div>
+                )}
 
                 <ul className="divide-y divide-bark-100 px-5">
                   {order.items.map((item) => {

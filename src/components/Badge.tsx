@@ -16,7 +16,7 @@ const styles: Record<ProductBadge, string> = {
 export default function Badge({ label }: { label: ProductBadge }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold leading-4 ${styles[label]}`}
+      className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[13px] font-semibold leading-4 ${styles[label]}`}
     >
       {label}
     </span>

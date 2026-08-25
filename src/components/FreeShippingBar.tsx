@@ -9,7 +9,7 @@ export default function FreeShippingBar({ itemsTotal }: { itemsTotal: number }) 
 
   return (
     <div className="rounded-card bg-tangerine-50 px-4 py-3.5">
-      <p className="text-[13px] font-semibold text-bark-700">
+      <p className="text-[16px] font-semibold text-bark-700">
         {remaining > 0 ? (
           <>
             무료배송까지 <span className="text-tangerine-600">{formatWon(remaining)}</span> 남았어요!
@@ -25,7 +25,7 @@ export default function FreeShippingBar({ itemsTotal }: { itemsTotal: number }) 
             style={{ width: `${percent}%` }}
           />
         </div>
-        <span className="shrink-0 text-[11px] font-medium text-bark-400 tabular-nums">
+        <span className="shrink-0 text-[13px] font-medium text-bark-400 tabular-nums">
           {formatWon(Math.min(itemsTotal, FREE_SHIPPING_THRESHOLD))} / {formatWon(FREE_SHIPPING_THRESHOLD)}
         </span>
       </div>

@@ -35,7 +35,7 @@ export default function FarmCard({ farm, priority = false }: { farm: Farm; prior
           <p className="text-lg font-bold leading-snug text-white drop-shadow-sm [text-wrap:balance]">
             “{farm.quote}”
           </p>
-          <p className="mt-2 flex items-center gap-1 text-[13px] text-leaf-100">
+          <p className="mt-2 flex items-center gap-1 text-[16px] text-leaf-100">
             <MapPin className="h-3.5 w-3.5" />
             {farm.region} · {farm.owner} 농부
           </p>

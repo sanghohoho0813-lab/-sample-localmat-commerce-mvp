@@ -20,7 +20,7 @@ function CartButton() {
     >
       <ShoppingCart className="h-[22px] w-[22px]" />
       {count > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-tangerine-500 px-1 text-[11px] font-bold text-white animate-pop">
+        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-tangerine-500 px-1 text-[13px] font-bold text-white animate-pop">
           {count > 99 ? "99+" : count}
         </span>
       )}
@@ -48,7 +48,8 @@ function CategoryNav() {
           <LayoutGrid className="h-4 w-4 text-leaf-600" />
           카테고리 전체보기
         </Link>
-        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none">
+        {/* min-w-0: flex 자식이라 이게 없으면 스크롤 영역이 내용 폭만큼 늘어나 문서가 가로로 넘칩니다. */}
+        <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto scrollbar-none">
           {categories.map((c) => {
             const active = activeSlug === c.slug;
             return (

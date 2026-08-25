@@ -32,7 +32,7 @@ export default function HeroBanner() {
           href="/products?filter=seasonal"
           className="absolute right-5 top-5 z-10 hidden h-24 w-24 flex-col items-center justify-center rounded-full bg-white/95 text-center shadow-lift backdrop-blur transition-transform duration-200 hover:scale-105 focus-ring lg:flex"
         >
-          <span className="text-[11px] font-semibold text-tangerine-500">지금이 제철!</span>
+          <span className="text-[13px] font-semibold text-tangerine-500">지금이 제철!</span>
           <span className="mt-0.5 text-sm font-extrabold leading-tight text-leaf-800">
             제철 먹거리
             <br />
@@ -40,12 +40,12 @@ export default function HeroBanner() {
           </span>
         </Link>
 
-        <div className="relative flex min-h-[420px] flex-col justify-end px-5 pb-7 pt-24 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
+        <div className="relative flex min-h-[360px] flex-col justify-end px-5 pb-7 pt-20 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-leaf-200 md:text-sm md:text-leaf-700">
             <Leaf className="h-4 w-4" />
             우리 동네, 신선한 한 끼 — 로컬맘
           </p>
-          <h1 className="mt-2.5 text-[28px] font-extrabold leading-[1.25] tracking-tight text-white md:mt-3 md:text-[42px] md:text-bark-900 lg:text-5xl">
+          <h1 className="mt-2.5 text-[34px] font-extrabold leading-[1.25] tracking-tight text-white md:mt-3 md:text-[50px] md:text-bark-900 lg:text-5xl">
             지금, 가장 신선한
             <br />
             <span className="text-leaf-200 md:text-leaf-700">제철 로컬 푸드</span>
@@ -61,17 +61,18 @@ export default function HeroBanner() {
             <span className="flex items-center gap-1"><Leaf className="h-4 w-4 text-leaf-300 md:text-leaf-600" /> 친환경</span>
           </div>
 
-          <div className="mt-6 flex items-center gap-2.5 md:mt-8">
+          {/* 좁은 화면에서는 세로로 쌓아 큰 글자에서도 버튼이 잘리지 않게 합니다. */}
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center md:mt-8">
             <Link
               href="/products?filter=seasonal"
-              className="btn-primary h-12 flex-1 whitespace-nowrap px-4 text-[15px] shadow-soft md:flex-none md:px-6"
+              className="btn-primary h-13 w-full whitespace-nowrap px-5 text-[18px] shadow-soft sm:w-auto md:px-6"
             >
               제철 상품 보러가기
               <ArrowRight className="h-4 w-4 shrink-0" />
             </Link>
             <Link
               href="/farms"
-              className="inline-flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-white/35 bg-white/10 px-4 text-[15px] font-semibold text-white backdrop-blur transition-colors duration-200 hover:bg-white/20 md:border-bark-200 md:bg-white md:px-5 md:text-bark-700 md:hover:border-leaf-400 md:hover:text-leaf-700"
+              className="inline-flex h-13 w-full items-center justify-center whitespace-nowrap rounded-xl border border-white/35 bg-white/10 px-5 text-[18px] font-semibold text-white backdrop-blur transition-colors duration-200 hover:bg-white/20 sm:w-auto md:border-bark-200 md:bg-white md:text-bark-700 md:hover:border-leaf-400 md:hover:text-leaf-700"
             >
               농가 이야기
             </Link>

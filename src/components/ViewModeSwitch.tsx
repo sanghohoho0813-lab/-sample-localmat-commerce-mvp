@@ -88,13 +88,13 @@ export default function ViewModeSwitch({
         className="hidden h-10 items-center gap-1.5 rounded-full px-2.5 text-bark-700 transition-colors duration-200 hover:bg-cream-100 hover:text-leaf-700 focus-ring md:flex"
       >
         <Icon className="h-[22px] w-[22px]" />
-        <span className="hidden text-[13px] font-medium xl:inline">{label}</span>
+        <span className="hidden text-[16px] font-medium xl:inline">{label}</span>
       </button>
     ) : (
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex h-11 items-center gap-2 rounded-pill border border-bark-200 bg-white px-4 text-[13px] font-semibold text-bark-700 transition-colors duration-200 hover:border-leaf-400 hover:text-leaf-700 focus-ring"
+        className="inline-flex h-11 items-center gap-2 rounded-pill border border-bark-200 bg-white px-4 text-[16px] font-semibold text-bark-700 transition-colors duration-200 hover:border-leaf-400 hover:text-leaf-700 focus-ring"
       >
         <Icon className="h-4 w-4" />
         {label}

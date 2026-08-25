@@ -142,7 +142,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
                 </span>
               )}
-              <span className="text-[28px] font-extrabold text-bark-900">
+              <span className="text-[34px] font-extrabold text-bark-900">
                 {formatPrice(product.price)}
                 <span className="text-xl">원</span>
               </span>
@@ -177,7 +177,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     key={o.label}
                     type="button"
                     onClick={() => setOptionLabel(o.label)}
-                    className={`flex h-12 items-center justify-between rounded-xl border px-4 text-sm transition-colors duration-200 ${
+                    className={`flex h-13 items-center justify-between rounded-xl border px-4 text-sm transition-colors duration-200 ${
                       optionLabel === o.label
                         ? "border-leaf-600 bg-leaf-50 font-bold text-leaf-800"
                         : "border-bark-200 bg-white text-bark-600 hover:border-leaf-300"
@@ -202,11 +202,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
           {/* Desktop CTA */}
           <div className="mt-5 hidden gap-3 md:flex">
-            <button type="button" onClick={addToCart} className="btn-outline h-[52px] flex-1 text-[15px] font-bold">
+            <button type="button" onClick={addToCart} className="btn-outline h-14 flex-1 text-[18px] font-bold">
               <ShoppingCart className="h-[18px] w-[18px]" />
               장바구니
             </button>
-            <button type="button" onClick={buyNow} className="btn-primary h-[52px] flex-1 text-[15px]">
+            <button type="button" onClick={buyNow} className="btn-primary h-14 flex-1 text-[18px]">
               바로 구매
             </button>
           </div>
@@ -352,12 +352,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         className="fixed inset-x-0 bottom-16 z-30 border-t border-bark-100 bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex gap-2.5">
-          <button type="button" onClick={addToCart} className="btn-outline h-12 flex-1 text-sm font-bold">
-            <ShoppingCart className="h-4 w-4" />
-            장바구니
+        {/* 글자를 키운 뒤에도 좁은 화면에서 잘리지 않도록 장바구니는 아이콘 버튼으로 둡니다. */}
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={addToCart}
+            aria-label="장바구니에 담기"
+            className="btn-outline h-13 w-13 shrink-0 px-0"
+          >
+            <ShoppingCart className="h-[22px] w-[22px]" />
           </button>
-          <button type="button" onClick={buyNow} className="btn-primary h-12 flex-[1.4] text-sm">
+          <button
+            type="button"
+            onClick={buyNow}
+            className="btn-primary h-13 min-w-0 flex-1 text-[18px]"
+          >
             {formatWon(total)} 바로 구매
           </button>
         </div>
