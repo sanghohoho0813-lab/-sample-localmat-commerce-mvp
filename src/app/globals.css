@@ -1,0 +1,50 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream-100 text-bark-800 antialiased;
+  overflow-x: hidden;
+  word-break: keep-all;
+}
+
+::selection {
+  @apply bg-leaf-200 text-leaf-900;
+}
+
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-tangerine-500 font-semibold text-white transition-colors duration-200 hover:bg-tangerine-600 active:bg-tangerine-700 disabled:cursor-not-allowed disabled:bg-bark-300;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf-600 font-semibold text-white transition-colors duration-200 hover:bg-leaf-700 active:bg-leaf-800;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-bark-200 bg-white font-medium text-bark-700 transition-colors duration-200 hover:border-leaf-400 hover:text-leaf-700;
+  }
+  .card-surface {
+    @apply rounded-card border border-bark-100 bg-white shadow-soft;
+  }
+}
