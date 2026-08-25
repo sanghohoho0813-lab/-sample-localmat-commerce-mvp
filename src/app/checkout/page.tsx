@@ -203,6 +203,7 @@ export default function CheckoutPage() {
                       product={product}
                       className="w-14 rounded-lg border border-bark-100"
                       iconSize="text-xl"
+                      sizes="56px"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-bark-800">

@@ -44,18 +44,42 @@ npm run typecheck  # TypeScript 검사
 - 무료배송 기준 40,000원, 미만 시 배송비 3,000원
 - 데모 사용자(김로컬)가 자동 설정되며 배송지 2곳, 쿠폰 3종 제공
 
+## PC / 모바일 뷰 전환
+
+같은 브랜드를 기기별로 최적화된 두 가지 UX로 설계했고, 서로 바꿔 볼 수 있습니다.
+
+| 접속 기기 | 버튼 | 동작 |
+| --- | --- | --- |
+| PC | **스마트폰에서 보기** (헤더·푸터) | 현재 페이지를 기기 목업 iframe으로 띄웁니다. iframe 폭을 실제 기기 CSS 폭(375/390/430)으로 고정하므로 Tailwind 브레이크포인트가 실제 스마트폰과 동일하게 동작합니다. |
+| 스마트폰 | **PC 버전으로 보기** (푸터) | `viewport` meta 폭을 1280px로 바꿔 브라우저가 데스크톱 레이아웃을 그대로 렌더링합니다. 다시 누르면 모바일로 복귀합니다. |
+
+- 선택한 모드는 `localStorage`에 저장되고, `<head>` 인라인 스크립트가 첫 페인트 전에 적용해 새로고침 시 깜빡임이 없습니다.
+- 실제 기기 판별은 `screen` 크기와 `pointer: coarse`를 함께 보므로, viewport를 바꿔도 버튼이 뒤바뀌지 않습니다.
+- `viewport` meta는 Next가 기본 삽입하는 태그 **하나만** 두고 조작합니다. (`viewport` export나 직접 작성한 `<meta>`를 함께 두면 태그가 중복돼 어느 폭이 적용될지 브라우저마다 달라집니다.)
+
 ## 상품 이미지 교체 방법
 
-이미지는 현재 카테고리별 소프트 그라디언트 플레이스홀더로 표시됩니다.
-아래 경로에 실제 이미지 파일을 넣으면 **코드 수정 없이 자동으로** 표시됩니다.
+상품 26종 · 농가 8곳의 실제 사진이 적용되어 있습니다. 교체하려면 아래 경로의 파일만 바꾸면 됩니다.
 
 ```
-public/images/products/{slug}.jpg   # 예: public/images/products/nonsan-ttalgi.jpg
-public/images/farms/{slug}.jpg      # 예: public/images/farms/haenam-nokdu.jpg
+public/images/products/{slug}.webp   # 예: public/images/products/nonsan-ttalgi.webp
+public/images/farms/{slug}.webp      # 예: public/images/farms/haenam-nokdu.webp
 ```
 
-각 상품/농가의 `image` 필드(`src/lib/data/*.ts`)가 해당 경로를 이미 참조하고 있으며,
-`ProductImage` 컴포넌트가 aspect ratio를 강제하므로 어떤 비율의 원본을 넣어도 레이아웃이 유지됩니다.
+`slug`는 `src/lib/data/products.ts` · `farms.ts`의 값과 같습니다.
+`ProductImage` / `FarmImage` 컴포넌트가 aspect ratio(상품 1:1, 농가 16:9)를 강제하므로
+어떤 비율의 원본을 넣어도 레이아웃이 흔들리지 않고, 파일이 없으면 자동으로
+카테고리별 그라디언트 플레이스홀더로 대체됩니다.
+
+원본 사진(PNG/JPG)을 배포용 WebP로 일괄 변환하려면:
+
+```bash
+node scripts/optimize-images.mjs <원본디렉터리>
+# <원본디렉터리>/products/{slug}.png, <원본디렉터리>/farms/{slug}.png 구조
+```
+
+상품은 1000×1000, 농가는 1600×900으로 크롭 후 WebP(q80)로 저장합니다.
+현재 적용된 34장은 이 스크립트로 79.2MB → 4.2MB (94.7% 절감) 처리했습니다.
 
 ## 데이터 구조
 

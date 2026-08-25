@@ -1,4 +1,9 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+/*
+ * Pretendard는 layout.tsx에서 비차단(media=print → all) 방식으로 불러옵니다.
+ * 여기서 @import 하면 렌더링 차단 + 직렬 라운드트립이 생기고,
+ * CDN이 느리거나 막힌 환경에서는 페이지가 통째로 멈춥니다.
+ * 폰트가 없으면 tailwind.config.ts의 시스템 한글 폰트 스택으로 자연스럽게 대체됩니다.
+ */
 
 @tailwind base;
 @tailwind components;
@@ -28,6 +33,28 @@ body {
   }
   .tap-highlight-none {
     -webkit-tap-highlight-color: transparent;
+  }
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-leaf-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-100;
+  }
+}
+
+/* 키보드 사용자에게만 포커스 링을 노출합니다. */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  @apply outline-none ring-2 ring-leaf-500 ring-offset-2 ring-offset-cream-100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

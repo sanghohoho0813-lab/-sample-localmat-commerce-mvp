@@ -88,6 +88,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
                       product={product}
                       className="w-14 rounded-lg border border-bark-100"
                       iconSize="text-xl"
+                      sizes="56px"
                     />
                   )}
                   <div className="min-w-0 flex-1">

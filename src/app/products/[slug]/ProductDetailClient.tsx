@@ -82,14 +82,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         {/* Image */}
-        <div className="relative">
-          <ProductImage
-            product={product}
-            className="rounded-[20px] border border-bark-100 bg-white"
-            iconSize="text-7xl"
-          />
+        <div className="group relative lg:sticky lg:top-32 lg:self-start">
+          <div className="overflow-hidden rounded-[20px] border border-bark-100 bg-white">
+            <div className="transition-transform duration-500 ease-out group-hover:scale-[1.04]">
+              <ProductImage
+                product={product}
+                priority
+                sizes="(max-width: 1023px) 100vw, 600px"
+                className="w-full rounded-[20px]"
+                iconSize="text-7xl"
+              />
+            </div>
+          </div>
           {product.badges.length > 0 && (
-            <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
+            <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-1.5">
               {product.badges.map((b) => (
                 <Badge key={b} label={b} />
               ))}

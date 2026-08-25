@@ -7,7 +7,7 @@ export const products: Product[] = [
   {
     id: "p01",
     slug: "haenam-bomdong",
-    name: "해남 봄동 샘채소",
+    name: "해남 봄동 생채소",
     unit: "1kg",
     categoryId: "cat-vegetable",
     farmId: "farm-haenam",
@@ -27,7 +27,7 @@ export const products: Product[] = [
     ],
     storageTip: "신문지에 감싸 냉장 보관, 5일 이내 섭취를 권장합니다.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/haenam-bomdong.jpg",
+    image: "/images/products/haenam-bomdong.webp",
   },
   {
     id: "p02",
@@ -53,7 +53,7 @@ export const products: Product[] = [
     ],
     storageTip: "흙을 씻지 말고 서늘하고 어두운 곳에 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/pyeongchang-gamja.jpg",
+    image: "/images/products/pyeongchang-gamja.webp",
   },
   {
     id: "p03",
@@ -78,7 +78,7 @@ export const products: Product[] = [
     ],
     storageTip: "겉잎을 떼지 말고 랩에 싸서 냉장 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/pyeongchang-yangbaechu.jpg",
+    image: "/images/products/pyeongchang-yangbaechu.webp",
   },
   {
     id: "p04",
@@ -103,7 +103,7 @@ export const products: Product[] = [
     ],
     storageTip: "신문지에 감싸 서늘한 곳 또는 냉장 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/haenam-baechu.jpg",
+    image: "/images/products/haenam-baechu.webp",
   },
 
   // ── 과일 ──────────────────────────────────────────────
@@ -135,7 +135,7 @@ export const products: Product[] = [
     ],
     storageTip: "씻지 않은 상태로 냉장 보관, 2~3일 이내 드세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/nonsan-ttalgi.jpg",
+    image: "/images/products/nonsan-ttalgi.webp",
   },
   {
     id: "p06",
@@ -164,7 +164,7 @@ export const products: Product[] = [
     ],
     storageTip: "서늘한 곳에 두고 겹치지 않게 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/jeju-gamgyul.jpg",
+    image: "/images/products/jeju-gamgyul.webp",
   },
   {
     id: "p07",
@@ -190,7 +190,7 @@ export const products: Product[] = [
     ],
     storageTip: "직사광선을 피해 서늘한 곳에 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/jeju-hallabong.jpg",
+    image: "/images/products/jeju-hallabong.webp",
   },
   {
     id: "p08",
@@ -215,7 +215,7 @@ export const products: Product[] = [
     ],
     storageTip: "비닐팩에 담아 냉장 보관하면 오래 아삭합니다.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/cheongsong-sagwa.jpg",
+    image: "/images/products/cheongsong-sagwa.webp",
   },
 
   // ── 축산물 ────────────────────────────────────────────
@@ -246,7 +246,7 @@ export const products: Product[] = [
     ],
     storageTip: "냉장 3일, 장기 보관 시 소분해 냉동하세요.",
     shippingNote: "냉장 배송 · 평일 오후 2시 이전 주문 시 당일 출고",
-    image: "/images/products/handon-samgyeopsal.jpg",
+    image: "/images/products/handon-samgyeopsal.webp",
   },
   {
     id: "p10",
@@ -271,7 +271,7 @@ export const products: Product[] = [
     ],
     storageTip: "냉장 3일, 장기 보관 시 소분해 냉동하세요.",
     shippingNote: "냉장 배송 · 평일 오후 2시 이전 주문 시 당일 출고",
-    image: "/images/products/handon-moksal.jpg",
+    image: "/images/products/handon-moksal.webp",
   },
   {
     id: "p11",
@@ -300,7 +300,7 @@ export const products: Product[] = [
     ],
     storageTip: "뾰족한 쪽이 아래로 가게 냉장 보관하세요.",
     shippingNote: "파손 방지 완충 포장 · 당일 출고",
-    image: "/images/products/yujeongran-15.jpg",
+    image: "/images/products/yujeongran-15.webp",
   },
 
   // ── 수산물 ────────────────────────────────────────────
@@ -332,7 +332,7 @@ export const products: Product[] = [
     ],
     storageTip: "받은 즉시 냉장 보관, 2일 이내 조리하세요.",
     shippingNote: "산소 포장 · 새벽 조업 당일 출고",
-    image: "/images/products/wando-jeonbok.jpg",
+    image: "/images/products/wando-jeonbok.webp",
   },
   {
     id: "p13",
@@ -357,7 +357,7 @@ export const products: Product[] = [
     ],
     storageTip: "밀봉해 서늘하고 건조한 곳에 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/wando-miyeok.jpg",
+    image: "/images/products/wando-miyeok.webp",
   },
   {
     id: "p14",
@@ -382,7 +382,7 @@ export const products: Product[] = [
     ],
     storageTip: "밀봉해 서늘하고 건조한 곳에 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/wando-dasima.jpg",
+    image: "/images/products/wando-dasima.webp",
   },
 
   // ── 가공식품 ──────────────────────────────────────────
@@ -409,7 +409,7 @@ export const products: Product[] = [
     ],
     storageTip: "개봉 후 냉장 보관, 3주 이내 드세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/nonsan-ttalgi-jam.jpg",
+    image: "/images/products/nonsan-ttalgi-jam.webp",
   },
   {
     id: "p16",
@@ -435,7 +435,7 @@ export const products: Product[] = [
     ],
     storageTip: "직사광선을 피해 서늘한 곳에 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/cheongsong-sagwajeup.jpg",
+    image: "/images/products/cheongsong-sagwajeup.webp",
   },
   {
     id: "p17",
@@ -460,7 +460,7 @@ export const products: Product[] = [
     ],
     storageTip: "개봉 후 냉장 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/jeju-gamgyul-cheong.jpg",
+    image: "/images/products/jeju-gamgyul-cheong.webp",
   },
   {
     id: "p18",
@@ -485,7 +485,7 @@ export const products: Product[] = [
     ],
     storageTip: "냉장 보관, 개봉 후 2일 이내 드세요.",
     shippingNote: "냉장 배송 · 당일 출고",
-    image: "/images/products/boseong-sausage.jpg",
+    image: "/images/products/boseong-sausage.webp",
   },
 
   // ── 곡류/견과 ─────────────────────────────────────────
@@ -512,7 +512,7 @@ export const products: Product[] = [
     ],
     storageTip: "받은 즉시 쪄서 드시거나 냉동 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/pyeongchang-oksusu.jpg",
+    image: "/images/products/pyeongchang-oksusu.webp",
   },
   {
     id: "p20",
@@ -538,7 +538,7 @@ export const products: Product[] = [
     ],
     storageTip: "냉장 보관하지 말고 서늘한 실온에 두세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/haenam-goguma.jpg",
+    image: "/images/products/haenam-goguma.webp",
   },
   {
     id: "p21",
@@ -563,7 +563,7 @@ export const products: Product[] = [
     ],
     storageTip: "밀폐 용기에 담아 서늘한 곳에 보관하세요.",
     shippingNote: "주문 후 도정 · 1~2일 내 출고",
-    image: "/images/products/haenam-haepssal.jpg",
+    image: "/images/products/haenam-haepssal.webp",
   },
 
   // ── 음료/간식 ─────────────────────────────────────────
@@ -590,7 +590,7 @@ export const products: Product[] = [
     ],
     storageTip: "개봉 후 밀봉해 보관하세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/cheongsong-sagwachip.jpg",
+    image: "/images/products/cheongsong-sagwachip.webp",
   },
   {
     id: "p23",
@@ -615,7 +615,7 @@ export const products: Product[] = [
     ],
     storageTip: "냉장 보관, 7일 이내 드세요.",
     shippingNote: SHIP_DEFAULT,
-    image: "/images/products/yangpyeong-gueun-gyeran.jpg",
+    image: "/images/products/yangpyeong-gueun-gyeran.webp",
   },
 
   // ── 선물세트 ──────────────────────────────────────────
@@ -643,7 +643,7 @@ export const products: Product[] = [
     ],
     storageTip: "받은 즉시 냉장 보관, 2일 이내 조리하세요.",
     shippingNote: "산소 포장 · 선물 포장 · 새벽 조업 당일 출고",
-    image: "/images/products/wando-jeonbok-gift.jpg",
+    image: "/images/products/wando-jeonbok-gift.webp",
   },
   {
     id: "p25",
@@ -668,7 +668,7 @@ export const products: Product[] = [
     ],
     storageTip: "비닐팩에 담아 냉장 보관하면 오래 아삭합니다.",
     shippingNote: "선물 포장 · 당일 선별 출고",
-    image: "/images/products/cheongsong-sagwa-gift.jpg",
+    image: "/images/products/cheongsong-sagwa-gift.webp",
   },
   {
     id: "p26",
@@ -693,7 +693,7 @@ export const products: Product[] = [
     ],
     storageTip: "씻지 않은 상태로 냉장 보관, 2~3일 이내 드세요.",
     shippingNote: "선물 포장 · 냉장 배송 · 당일 출고",
-    image: "/images/products/nonsan-ttalgi-gift.jpg",
+    image: "/images/products/nonsan-ttalgi-gift.webp",
   },
 ];
 

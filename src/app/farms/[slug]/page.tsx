@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, ChevronRight, MapPin, Sprout } from "lucide-react";
+import FarmImage from "@/components/FarmImage";
 import ProductCard from "@/components/ProductCard";
 import { farms, getFarm } from "@/lib/data/farms";
 import { products } from "@/lib/data/products";
@@ -34,8 +35,10 @@ export default async function FarmDetailPage({
   return (
     <div className="pb-8">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-leaf-800 via-leaf-700 to-leaf-600 text-white">
-        <div className="container-page py-10 md:py-16">
+      <div className="relative overflow-hidden text-white">
+        <FarmImage farm={farm} priority sizes="100vw" />
+        <div className="absolute inset-0 bg-gradient-to-t from-leaf-900/95 via-leaf-900/70 to-leaf-900/45 md:bg-gradient-to-r md:from-leaf-900/95 md:via-leaf-900/70 md:to-leaf-900/20" />
+        <div className="container-page relative py-10 md:max-w-[1280px] md:py-20">
           <nav className="mb-5 flex items-center gap-1 text-xs text-leaf-200" aria-label="breadcrumb">
             <Link href="/" className="hover:text-white">홈</Link>
             <ChevronRight className="h-3 w-3" />

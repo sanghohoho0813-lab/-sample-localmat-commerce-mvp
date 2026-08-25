@@ -50,8 +50,8 @@ export default function HomePage() {
           moreHref="/products"
         />
         <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 md:gap-y-8 lg:grid-cols-4">
-          {recommended.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {recommended.map((p, i) => (
+            <ProductCard key={p.id} product={p} priority={i < 4} />
           ))}
         </div>
       </section>
@@ -67,7 +67,10 @@ export default function HomePage() {
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
             {seasonal.slice(0, 5).map((p) => (
               <div key={p.id} className="w-[160px] shrink-0 md:w-auto">
-                <ProductCard product={p} />
+                <ProductCard
+                  product={p}
+                  sizes="(max-width: 767px) 160px, (max-width: 1023px) 33vw, 230px"
+                />
               </div>
             ))}
           </div>

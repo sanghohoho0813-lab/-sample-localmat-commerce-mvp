@@ -70,6 +70,7 @@ export default function CartPage() {
                       product={product}
                       className="w-20 rounded-xl border border-bark-100 md:w-24"
                       iconSize="text-2xl"
+                      sizes="96px"
                     />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col">

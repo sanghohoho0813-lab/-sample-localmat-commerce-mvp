@@ -18,7 +18,7 @@ export const farms: Farm[] = [
     ],
     since: 2007,
     certifications: ["GAP 인증", "저탄소 인증"],
-    image: "/images/farms/nonsan-ttalgi.jpg",
+    image: "/images/farms/nonsan-ttalgi.webp",
   },
   {
     id: "farm-haenam",
@@ -37,14 +37,14 @@ export const farms: Farm[] = [
     ],
     since: 1998,
     certifications: ["무농약 인증"],
-    image: "/images/farms/haenam-nokdu.jpg",
+    image: "/images/farms/haenam-nokdu.webp",
   },
   {
     id: "farm-happy",
     slug: "happy-hen",
     name: "행복한 닭 농장",
     region: "경기 양평",
-    owner: "이수진",
+    owner: "이순진",
     items: ["자연방사 유정란"],
     quote: "닭이 행복해야 좋은 알을 낳습니다.",
     intro:
@@ -56,7 +56,7 @@ export const farms: Farm[] = [
     ],
     since: 2013,
     certifications: ["동물복지 인증", "무항생제 인증"],
-    image: "/images/farms/happy-hen.jpg",
+    image: "/images/farms/happy-hen.webp",
   },
   {
     id: "farm-boseong",
@@ -75,7 +75,7 @@ export const farms: Farm[] = [
     ],
     since: 2010,
     certifications: ["무항생제 인증", "HACCP"],
-    image: "/images/farms/boseong-handon.jpg",
+    image: "/images/farms/boseong-handon.webp",
   },
   {
     id: "farm-jeju",
@@ -94,7 +94,7 @@ export const farms: Farm[] = [
     ],
     since: 2001,
     certifications: ["GAP 인증"],
-    image: "/images/farms/jeju-seogwipo.jpg",
+    image: "/images/farms/jeju-seogwipo.webp",
   },
   {
     id: "farm-wando",
@@ -113,7 +113,7 @@ export const farms: Farm[] = [
     ],
     since: 2005,
     certifications: ["친환경 수산물 인증"],
-    image: "/images/farms/wando-badasori.jpg",
+    image: "/images/farms/wando-badasori.webp",
   },
   {
     id: "farm-cheongsong",
@@ -132,7 +132,7 @@ export const farms: Farm[] = [
     ],
     since: 1995,
     certifications: ["GAP 인증"],
-    image: "/images/farms/cheongsong-apple.jpg",
+    image: "/images/farms/cheongsong-apple.webp",
   },
   {
     id: "farm-gangwon",
@@ -151,7 +151,7 @@ export const farms: Farm[] = [
     ],
     since: 2003,
     certifications: ["GAP 인증"],
-    image: "/images/farms/pyeongchang-highland.jpg",
+    image: "/images/farms/pyeongchang-highland.webp",
   },
 ];
 

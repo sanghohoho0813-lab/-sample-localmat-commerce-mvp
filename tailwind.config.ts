@@ -17,6 +17,7 @@ const config: Config = {
           700: "#335C2B",
           800: "#2B4A25",
           900: "#233D1F",
+          950: "#152613",
         },
         // Warm accent orange
         tangerine: {

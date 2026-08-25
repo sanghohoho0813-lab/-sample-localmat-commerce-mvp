@@ -72,6 +72,7 @@ export default function OrdersPage() {
                               product={product}
                               className="w-16 rounded-xl border border-bark-100"
                               iconSize="text-2xl"
+                              sizes="64px"
                             />
                           </Link>
                         ) : null}

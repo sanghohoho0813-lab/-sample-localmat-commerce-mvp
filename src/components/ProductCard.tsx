@@ -11,11 +11,23 @@ import ProductImage from "@/components/ProductImage";
 import RatingStars from "@/components/RatingStars";
 import WishlistButton from "@/components/WishlistButton";
 
-export default function ProductCard({ product }: { product: Product }) {
+const LOW_STOCK_THRESHOLD = 30;
+
+export default function ProductCard({
+  product,
+  priority = false,
+  sizes,
+}: {
+  product: Product;
+  /** 첫 화면(above the fold) 카드에 지정해 LCP를 앞당깁니다. */
+  priority?: boolean;
+  sizes?: string;
+}) {
   const farm = getFarm(product.farmId);
   const rate = discountRate(product.price, product.originalPrice);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
+  const lowStock = product.stock <= LOW_STOCK_THRESHOLD;
 
   function quickAdd(e: React.MouseEvent) {
     e.preventDefault();
@@ -28,25 +40,27 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group block tap-highlight-none"
+      className="group block rounded-card focus-ring tap-highlight-none"
       aria-label={`${product.name} ${product.unit}`}
     >
       <div className="relative">
-        <ProductImage
-          product={product}
-          className="rounded-card border border-bark-100 bg-white transition-shadow duration-300 group-hover:shadow-lift"
-        />
+        <div className="overflow-hidden rounded-card border border-bark-100 bg-white transition-shadow duration-300 group-hover:shadow-lift">
+          <div className="transition-transform duration-500 ease-out group-hover:scale-[1.05]">
+            <ProductImage product={product} priority={priority} sizes={sizes} className="w-full" />
+          </div>
+        </div>
+
         <WishlistButton productId={product.id} className="absolute right-2.5 top-2.5" />
         <button
           type="button"
           onClick={quickAdd}
-          aria-label="장바구니 담기"
-          className="absolute bottom-2.5 right-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-leaf-700 shadow-soft transition-all duration-200 hover:bg-leaf-600 hover:text-white active:scale-95 md:opacity-0 md:translate-y-1 md:group-hover:translate-y-0 md:group-hover:opacity-100"
+          aria-label={`${product.name} 장바구니 담기`}
+          className="absolute bottom-2.5 right-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-leaf-700 shadow-soft transition-all duration-200 hover:bg-leaf-600 hover:text-white active:scale-95 focus-ring md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100"
         >
           <ShoppingCart className="h-[18px] w-[18px]" />
         </button>
         {product.badges.length > 0 && (
-          <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1 pr-12">
+          <div className="pointer-events-none absolute left-2.5 top-2.5 flex flex-wrap gap-1 pr-12">
             {product.badges.slice(0, 2).map((b) => (
               <Badge key={b} label={b} />
             ))}
@@ -55,7 +69,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
 
       <div className="mt-2.5 space-y-1 px-0.5">
-        <p className="text-xs text-bark-400">
+        <p className="truncate text-xs text-bark-400">
           {product.region} · {farm?.name}
         </p>
         <h3 className="line-clamp-2 text-sm font-medium leading-snug text-bark-800 transition-colors group-hover:text-leaf-700">
@@ -73,7 +87,14 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           )}
         </div>
-        <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
+          {lowStock && (
+            <span className="text-xs font-semibold text-tangerine-600">
+              {product.stock}개 남음
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
