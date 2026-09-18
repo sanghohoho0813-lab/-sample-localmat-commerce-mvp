@@ -5,6 +5,7 @@ import MobileNav from "@/components/MobileNav";
 import Footer from "@/components/Footer";
 import ToastViewport from "@/components/ToastViewport";
 import MiraeRibbon from "@/components/mirae/MiraeRibbon";
+import MiraeAILabSampleCTA from "@/components/mirae/MiraeAILabSampleCTA";
 import { FONT_LOADER_SCRIPT, VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
 
 export const metadata: Metadata = {
@@ -54,9 +55,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <MiraeRibbon />
         <Header />
-        <main id="main" className="flex-1 pb-20 md:pb-0">
+        {/* 하단 여백은 Footer(pb-32)가 모바일 하단 내비를 가리지 않게 책임집니다.
+            여기서 pb를 주면 아래 CTA 섹션 위에 빈 크림 띠가 생깁니다. */}
+        <main id="main" className="flex-1">
           {children}
         </main>
+        {/* 모든 샘플 페이지 하단 공통 브릿지 CTA (링크·문구: src/lib/mirae.ts) */}
+        <MiraeAILabSampleCTA />
         <Footer />
         <MobileNav />
         <ToastViewport />

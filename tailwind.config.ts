@@ -136,6 +136,12 @@ const config: Config = {
           "0%": { backgroundPosition: "-400px 0" },
           "100%": { backgroundPosition: "400px 0" },
         },
+        // CTA 버튼 위를 6초에 한 번, 아주 짧게 지나가는 빛줄기.
+        // 0~12%는 화면 밖 대기 → 12~42%에만 이동 → 이후 다시 대기해 "가끔 은은하게" 반짝입니다.
+        "light-sweep": {
+          "0%, 12%": { transform: "translateX(-130%) skewX(-18deg)" },
+          "42%, 100%": { transform: "translateX(330%) skewX(-18deg)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.4s ease-out both",
@@ -143,6 +149,7 @@ const config: Config = {
         pop: "pop 0.3s ease-out",
         "check-pop": "check-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both",
         shimmer: "shimmer 1.4s linear infinite",
+        "light-sweep": "light-sweep 6s ease-in-out infinite",
       },
     },
   },
