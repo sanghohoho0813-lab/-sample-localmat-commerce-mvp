@@ -7,6 +7,7 @@ import ToastViewport from "@/components/ToastViewport";
 import MiraeRibbon from "@/components/mirae/MiraeRibbon";
 import MiraeAILabSampleCTA from "@/components/mirae/MiraeAILabSampleCTA";
 import { FONT_LOADER_SCRIPT, VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
@@ -47,6 +48,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: VIEW_MODE_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-screen flex-col">
+        {/* 미래AI랩 데모 공용 뒤로·앞으로 버튼 */}
+        <Script src="/mirae-history-nav.js" strategy="beforeInteractive" />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-leaf-700 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
