@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Leaf, Sun, Truck } from "lucide-react";
+import { ArrowRight, Leaf } from "lucide-react";
 
 /**
  * 메인 Hero — 실제 산지 사진 위 에디토리얼 커머스 배너.
@@ -40,7 +40,7 @@ export default function HeroBanner() {
           </span>
         </Link>
 
-        <div className="relative flex min-h-[360px] flex-col justify-end px-5 pb-7 pt-20 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
+        <div className="relative flex min-h-[320px] flex-col justify-end px-5 pb-6 pt-16 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-leaf-200 md:text-sm md:text-leaf-700">
             <Leaf className="h-4 w-4" />
             우리 동네, 신선한 한 끼 — 로컬맘
@@ -51,18 +51,12 @@ export default function HeroBanner() {
             <span className="text-leaf-200 md:text-leaf-700">제철 로컬 푸드</span>
           </h1>
           <p className="mt-2.5 text-sm leading-relaxed text-leaf-100/90 md:mt-4 md:text-base md:text-bark-600">
-            우리 지역 농가의 신선한 식탁을 만나보세요.
-            <br className="hidden md:block" /> 오늘 주문하면 내일 신선하게 도착해요.
+            <span className="hidden md:inline">우리 지역 농가의 신선한 식탁을 만나보세요.<br /></span>
+            오늘 주문하면 내일 신선하게 도착해요.
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-leaf-100/85 md:mt-5 md:text-sm md:text-bark-600">
-            <span className="flex items-center gap-1"><Truck className="h-4 w-4 text-leaf-300 md:text-leaf-600" /> 산지직송</span>
-            <span className="flex items-center gap-1"><Sun className="h-4 w-4 text-leaf-300 md:text-leaf-600" /> 당일수확</span>
-            <span className="flex items-center gap-1"><Leaf className="h-4 w-4 text-leaf-300 md:text-leaf-600" /> 친환경</span>
-          </div>
-
-          {/* 좁은 화면에서는 세로로 쌓아 큰 글자에서도 버튼이 잘리지 않게 합니다. */}
-          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center md:mt-8">
+          {/* 모바일은 핵심 버튼 하나만 — 농가 이야기는 하단 '스토리' 탭에 있습니다. */}
+          <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center md:mt-8">
             <Link
               href="/products?filter=seasonal"
               className="btn-primary h-13 w-full whitespace-nowrap px-5 text-[18px] shadow-soft sm:w-auto md:px-6"
@@ -72,7 +66,7 @@ export default function HeroBanner() {
             </Link>
             <Link
               href="/farms"
-              className="inline-flex h-13 w-full items-center justify-center whitespace-nowrap rounded-xl border border-white/35 bg-white/10 px-5 text-[18px] font-semibold text-white backdrop-blur transition-colors duration-200 hover:bg-white/20 sm:w-auto md:border-bark-200 md:bg-white md:text-bark-700 md:hover:border-leaf-400 md:hover:text-leaf-700"
+              className="hidden h-13 w-full items-center justify-center whitespace-nowrap rounded-xl border border-white/35 bg-white/10 px-5 text-[18px] font-semibold text-white backdrop-blur transition-colors duration-200 hover:bg-white/20 sm:inline-flex sm:w-auto md:border-bark-200 md:bg-white md:text-bark-700 md:hover:border-leaf-400 md:hover:text-leaf-700"
             >
               농가 이야기
             </Link>

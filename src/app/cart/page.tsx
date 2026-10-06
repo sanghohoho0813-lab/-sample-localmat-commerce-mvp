@@ -8,10 +8,10 @@ import PriceSummary from "@/components/PriceSummary";
 import ProductCard from "@/components/ProductCard";
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, addresses } from "@/lib/data/etc";
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
 import { getProduct, products } from "@/lib/data/products";
 import { expectedDeliveryDate, formatWon } from "@/lib/format";
-import { cartItemUnitPrice, useCartStore, useToastStore } from "@/lib/store";
+import { cartItemUnitPrice, maxQuantityFor, useCartStore, useToastStore } from "@/lib/store";
 
 export default function CartPage() {
   // persist rehydration guard (SSR renders empty cart)
@@ -21,6 +21,7 @@ export default function CartPage() {
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const restoreItem = useCartStore((s) => s.restoreItem);
   const showToast = useToastStore((s) => s.show);
 
   const visibleItems = mounted ? items : [];
@@ -31,7 +32,6 @@ export default function CartPage() {
   const shippingFee = itemsTotal === 0 || itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const total = itemsTotal + shippingFee;
   const delivery = expectedDeliveryDate(1);
-  const defaultAddress = addresses.find((a) => a.isDefault)!;
 
   // 함께 담으면 좋은 상품: 담긴 상품과 같은 산지를 우선하고, 모자라면 인기순으로 채웁니다.
   const recommended = useMemo(() => {
@@ -47,7 +47,17 @@ export default function CartPage() {
     return [...sameFarm, ...rest].slice(0, 4);
   }, [visibleItems]);
 
-  if (mounted && visibleItems.length === 0) {
+  // 저장된 장바구니를 읽기 전에는 '0원 주문하기' 같은 빈 화면이 번쩍이지 않게 자리만 잡아 둡니다.
+  if (!mounted) {
+    return (
+      <div className="container-page py-6 md:py-8" aria-busy="true">
+        <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">장바구니</h1>
+        <div className="h-48 animate-pulse rounded-card bg-white/70" />
+      </div>
+    );
+  }
+
+  if (visibleItems.length === 0) {
     return (
       <div className="container-page flex flex-col items-center py-24 text-center">
         <span className="flex h-20 w-20 items-center justify-center rounded-full bg-cream-200 text-bark-300">
@@ -68,13 +78,13 @@ export default function CartPage() {
         장바구니
       </h1>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-10">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Items */}
         <div className="space-y-4">
           <FreeShippingBar itemsTotal={itemsTotal} />
 
           <ul className="divide-y divide-bark-100 rounded-card border border-bark-100 bg-white px-4 md:px-5">
-            {visibleItems.map((item) => {
+            {visibleItems.map((item, index) => {
               const product = getProduct(item.productId);
               if (!product) return null;
               const unitPrice = cartItemUnitPrice(item);
@@ -98,28 +108,34 @@ export default function CartPage() {
                           {product.name} {product.unit}
                         </Link>
                         {item.optionLabel && (
-                          <p className="mt-0.5 text-xs text-bark-400">옵션: {item.optionLabel}</p>
+                          <p className="mt-0.5 text-sm text-bark-400">{item.optionLabel}</p>
                         )}
                       </div>
+                      {/* 실수로 지워도 바로 되돌릴 수 있게 — 확인 창 대신 되돌리기 */}
                       <button
                         type="button"
-                        aria-label="삭제"
+                        aria-label={`${product.name} 삭제`}
                         onClick={() => {
                           removeItem(item.productId, item.optionLabel);
-                          showToast("상품을 장바구니에서 뺐어요.");
+                          showToast("장바구니에서 뺐어요.", {
+                            label: "되돌리기",
+                            onClick: () => restoreItem(item, index),
+                          });
                         }}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-bark-300 transition-colors hover:bg-cream-100 hover:text-bark-500"
+                        className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bark-300 transition-colors hover:bg-cream-100 hover:text-bark-500 focus-ring"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-[18px] w-[18px]" />
                       </button>
                     </div>
-                    <div className="mt-auto flex items-end justify-between pt-3">
+                    {/* 아주 좁은 화면에서 큰 금액은 수량 아래 줄로 내려가도록 줄바꿈을 허용합니다. */}
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-x-3 gap-y-2 pt-3">
                       <QuantityStepper
                         size="sm"
                         value={item.quantity}
+                        max={maxQuantityFor(item.productId)}
                         onChange={(q) => updateQuantity(item.productId, item.optionLabel, q)}
                       />
-                      <p className="text-base font-extrabold text-bark-900">
+                      <p className="ml-auto text-base font-extrabold text-bark-900">
                         {formatWon(unitPrice * item.quantity)}
                       </p>
                     </div>
@@ -129,13 +145,12 @@ export default function CartPage() {
             })}
           </ul>
 
-          <div className="flex items-center gap-2.5 rounded-card bg-leaf-50 px-4 py-3.5 text-[16px] text-bark-600">
+          <p className="flex items-center gap-2.5 rounded-card bg-leaf-50 px-4 py-3.5 text-[16px] text-bark-600">
             <Truck className="h-4 w-4 shrink-0 text-leaf-600" />
             <span>
-              <b className="text-leaf-700">{defaultAddress.address1}</b>으로{" "}
-              오늘 주문하면 <b className="text-leaf-700">{delivery.label}</b> 도착 예정 · 산지직송·무료배송
+              오늘 주문하면 <b className="text-leaf-700">{delivery.label}</b> 도착 예정
             </span>
-          </div>
+          </p>
         </div>
 
         {/* Summary */}
@@ -174,14 +189,13 @@ export default function CartPage() {
 
       {/* Mobile sticky CTA */}
       <div
-        className="fixed inset-x-0 bottom-16 z-30 border-t border-bark-100 bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-bark-100 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
         <Link href="/checkout" className="btn-primary h-13 w-full text-[18px]">
           {formatWon(total)} 주문하기
         </Link>
       </div>
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

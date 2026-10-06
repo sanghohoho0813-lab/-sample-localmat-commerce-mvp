@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ListFilter, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
@@ -43,6 +44,49 @@ function sortProducts(list: Product[], sort: string): Product[] {
         (a, b) => b.rating * Math.log10(b.reviewCount + 1) - a.rating * Math.log10(a.reviewCount + 1)
       );
   }
+}
+
+/** 모바일 카테고리 칩 — PC·태블릿은 상단 카테고리 바가 같은 역할을 합니다. */
+function CategoryChips({ activeSlug, seasonalOnly }: { activeSlug?: string; seasonalOnly: boolean }) {
+  const activeRef = useRef<HTMLAnchorElement>(null);
+
+  // 뒤쪽 카테고리를 골랐을 때도 선택된 칩이 화면 안에 보이게 합니다.
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, []);
+
+  const chips = [
+    { key: "all", href: "/products", label: "전체", active: !activeSlug && !seasonalOnly },
+    { key: "seasonal", href: "/products?filter=seasonal", label: "제철", active: seasonalOnly },
+    ...categories.map((c) => ({
+      key: c.slug,
+      href: `/products?category=${c.slug}`,
+      label: c.name,
+      active: activeSlug === c.slug,
+    })),
+  ];
+
+  return (
+    <nav aria-label="카테고리" className="-mx-4 mb-4 overflow-x-auto px-4 scrollbar-none sm:-mx-6 sm:px-6 md:hidden">
+      <div className="flex w-max gap-2">
+        {chips.map((c) => (
+          <Link
+            key={c.key}
+            ref={c.active ? activeRef : undefined}
+            href={c.href}
+            aria-current={c.active ? "page" : undefined}
+            className={`flex h-11 shrink-0 items-center rounded-pill border px-4 text-[16px] font-semibold transition-colors duration-200 ${
+              c.active
+                ? "border-leaf-700 bg-leaf-700 text-white"
+                : "border-bark-200 bg-white text-bark-600"
+            }`}
+          >
+            {c.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
 }
 
 const allRegions = Array.from(new Set(products.map((p) => p.region.split(" ")[0])));
@@ -91,55 +135,57 @@ export default function ProductListClient({
   const activeFilterCount = selectedPrices.length + selectedRegions.length;
   const title = seasonalOnly ? "제철 먹거리" : category ? category.name : "전체 상품";
 
-  const filterPanel = (
+  const renderFilterPanel = (withCategory: boolean) => (
     <div className="space-y-6">
-      <div>
-        <h3 className="mb-2.5 text-sm font-bold text-bark-800">카테고리</h3>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              setDrawerOpen(false);
-              router.push("/products");
-            }}
-            className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
-              !category && !seasonalOnly
-                ? "border-leaf-600 bg-leaf-600 text-white"
-                : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
-            }`}
-          >
-            전체
-          </button>
-          {categories.map((c) => (
+      {withCategory && (
+        <div>
+          <h3 className="mb-2.5 text-sm font-bold text-bark-800">카테고리</h3>
+          <div className="flex flex-wrap gap-1.5">
             <button
-              key={c.id}
               type="button"
               onClick={() => {
                 setDrawerOpen(false);
-                router.push(`/products?category=${c.slug}`);
+                router.push("/products");
               }}
               className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
-                category?.id === c.id
+                !category && !seasonalOnly
                   ? "border-leaf-600 bg-leaf-600 text-white"
                   : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
               }`}
             >
-              {c.name}
+              전체
             </button>
-          ))}
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  router.push(`/products?category=${c.slug}`);
+                }}
+                className={`rounded-pill border px-3 py-1.5 text-[16px] font-medium transition-colors duration-200 ${
+                  category?.id === c.id
+                    ? "border-leaf-600 bg-leaf-600 text-white"
+                    : "border-bark-200 bg-white text-bark-600 hover:border-leaf-400"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <h3 className="mb-2.5 text-sm font-bold text-bark-800">가격</h3>
-        <div className="space-y-2">
+        <div className="space-y-0.5">
           {priceRanges.map((r) => (
-            <label key={r.value} className="flex cursor-pointer items-center gap-2.5 text-sm text-bark-600">
+            <label key={r.value} className="flex min-h-11 cursor-pointer items-center gap-3 text-[16px] text-bark-700 lg:min-h-9">
               <input
                 type="checkbox"
                 checked={selectedPrices.includes(r.value)}
                 onChange={() => toggle(selectedPrices, r.value, setSelectedPrices)}
-                className="h-[18px] w-[18px] rounded accent-leaf-600"
+                className="h-5 w-5 rounded accent-leaf-600"
               />
               {r.label}
             </label>
@@ -182,19 +228,14 @@ export default function ProductListClient({
 
   return (
     <div className="container-page py-6 md:py-8">
-      <div className="mb-5 md:mb-7">
-        <h1 className="text-xl font-extrabold tracking-tight text-bark-900 md:text-3xl">{title}</h1>
-        <p className="mt-1 text-sm text-bark-500">
-          {seasonalOnly
-            ? "지금 제철을 맞아 가장 맛있는 먹거리만 모았어요."
-            : "산지에서 바로 보내드리는 신선한 먹거리입니다."}
-        </p>
-      </div>
+      <h1 className="mb-4 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">{title}</h1>
+
+      <CategoryChips activeSlug={category?.slug} seasonalOnly={seasonalOnly} />
 
       <div className="flex gap-8">
         {/* Desktop sidebar */}
         <aside className="hidden w-56 shrink-0 lg:block">
-          <div className="sticky top-32 rounded-card border border-bark-100 bg-white p-5">{filterPanel}</div>
+          <div className="sticky top-32 rounded-card border border-bark-100 bg-white p-5">{renderFilterPanel(true)}</div>
         </aside>
 
         <div className="min-w-0 flex-1">
@@ -240,7 +281,7 @@ export default function ProductListClient({
               <span className="text-4xl">🧺</span>
               <p className="font-semibold text-bark-700">조건에 맞는 상품이 없어요</p>
               <p className="text-sm text-bark-400">필터를 조금 넓혀보시겠어요?</p>
-              <button type="button" onClick={resetFilters} className="btn-outline mt-2 h-10 px-4 text-sm">
+              <button type="button" onClick={resetFilters} className="btn-outline mt-2 h-11 px-5 text-[16px]">
                 필터 초기화
               </button>
             </div>
@@ -275,7 +316,7 @@ export default function ProductListClient({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {filterPanel}
+            {renderFilterPanel(false)}
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}

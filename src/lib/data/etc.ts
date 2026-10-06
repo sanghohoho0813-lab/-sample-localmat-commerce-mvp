@@ -6,33 +6,43 @@ export const SHIPPING_FEE = 3000;
 export const coupons: Coupon[] = [
   {
     id: "c01",
-    name: "신규 회원 10% 할인",
-    description: "로컬맘 첫 구매 고객님께 드리는 감사 쿠폰",
+    name: "첫 구매 10% 할인",
+    description: "최대 5,000원 할인",
     discountType: "percent",
     value: 10,
     minOrder: 20000,
     maxDiscount: 5000,
-    expiresAt: "2026-12-31",
+    expiresAt: "2027-12-31",
   },
   {
     id: "c02",
-    name: "제철 상품 3,000원 할인",
-    description: "제철 먹거리 기획전 한정 할인",
+    name: "장보기 3,000원 할인",
+    description: "3만원 이상 주문 시",
     discountType: "amount",
     value: 3000,
     minOrder: 30000,
-    expiresAt: "2026-09-30",
+    expiresAt: "2027-06-30",
   },
   {
     id: "c03",
-    name: "선물세트 5,000원 할인",
-    description: "마음을 전하는 선물세트 특별 할인",
+    name: "넉넉한 장보기 5,000원 할인",
+    description: "5만원 이상 주문 시",
     discountType: "amount",
     value: 5000,
     minOrder: 50000,
-    expiresAt: "2026-10-31",
+    expiresAt: "2027-09-30",
   },
 ];
+
+/** 이 주문 금액에서 쿠폰으로 깎이는 금액 — 조건이 안 맞으면 0 */
+export function couponDiscountFor(coupon: Coupon, itemsTotal: number): number {
+  if (itemsTotal < coupon.minOrder) return 0;
+  if (coupon.discountType === "percent") {
+    const raw = Math.floor((itemsTotal * coupon.value) / 100);
+    return coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw;
+  }
+  return coupon.value;
+}
 
 export const addresses: Address[] = [
   {

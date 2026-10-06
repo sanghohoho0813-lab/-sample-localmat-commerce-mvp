@@ -2,28 +2,33 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Banknote, CreditCard, Loader2, MapPin, Smartphone, Ticket } from "lucide-react";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, addresses, coupons, demoUser } from "@/lib/data/etc";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  SHIPPING_FEE,
+  addresses,
+  couponDiscountFor,
+  coupons,
+  demoUser,
+} from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
 import { expectedDeliveryDate, formatWon, makeOrderNumber } from "@/lib/format";
-import { cartItemUnitPrice, useCartStore, useOrderStore, useToastStore } from "@/lib/store";
+import { cartItemUnitPrice, useCartStore, useOrderStore } from "@/lib/store";
 import type { Order, PaymentMethod } from "@/lib/types";
 
-const paymentMethods: { value: PaymentMethod; label: string; icon: typeof CreditCard; note: string }[] = [
-  { value: "card", label: "신용/체크카드", icon: CreditCard, note: "모든 카드 지원" },
-  { value: "easy", label: "간편결제", icon: Smartphone, note: "로컬페이 · 각종 페이" },
-  { value: "bank", label: "계좌이체", icon: Banknote, note: "실시간 이체" },
+// 라벨을 네 글자로 맞춰 좁은 폰에서도 세 칸이 한 줄에 들어갑니다.
+const paymentMethods: { value: PaymentMethod; label: string; icon: typeof CreditCard }[] = [
+  { value: "card", label: "카드결제", icon: CreditCard },
+  { value: "easy", label: "간편결제", icon: Smartphone },
+  { value: "bank", label: "계좌이체", icon: Banknote },
 ];
 
-const requestOptions = [
-  "문 앞에 놓아주세요",
-  "경비실에 맡겨주세요",
-  "배송 전 연락주세요",
-  "직접 입력",
-];
+const CUSTOM_REQUEST = "직접 입력";
+const REQUEST_MAX = 50;
+const requestOptions = ["문 앞에 놓아주세요", "경비실에 맡겨주세요", "배송 전 연락주세요", CUSTOM_REQUEST];
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -33,12 +38,14 @@ export default function CheckoutPage() {
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clear);
   const addOrder = useOrderStore((s) => s.addOrder);
-  const showToast = useToastStore((s) => s.show);
 
   const [addressId, setAddressId] = useState(addresses.find((a) => a.isDefault)!.id);
   const [requestChoice, setRequestChoice] = useState(requestOptions[0]);
   const [customRequest, setCustomRequest] = useState("");
-  const [couponId, setCouponId] = useState<string>("");
+  const [requestError, setRequestError] = useState(false);
+  const customRequestRef = useRef<HTMLInputElement>(null);
+  /** null = 아직 고르지 않음 → 가장 많이 깎아 주는 쿠폰을 자동으로 적용 */
+  const [pickedCouponId, setPickedCouponId] = useState<string | null>(null);
   const [payment, setPayment] = useState<PaymentMethod>("card");
   const [placing, setPlacing] = useState(false);
 
@@ -46,19 +53,25 @@ export default function CheckoutPage() {
   const itemsTotal = visibleItems.reduce((sum, i) => sum + cartItemUnitPrice(i) * i.quantity, 0);
   const shippingFee = itemsTotal === 0 || itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
 
-  const couponDiscount = useMemo(() => {
-    const coupon = coupons.find((c) => c.id === couponId);
-    if (!coupon || itemsTotal < coupon.minOrder) return 0;
-    if (coupon.discountType === "percent") {
-      const raw = Math.floor((itemsTotal * coupon.value) / 100);
-      return coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw;
-    }
-    return coupon.value;
-  }, [couponId, itemsTotal]);
+  const { usableCoupons, unusableCount, bestCouponId } = useMemo(() => {
+    const usable = coupons
+      .map((c) => ({ coupon: c, discount: couponDiscountFor(c, itemsTotal) }))
+      .filter((c) => c.discount > 0)
+      .sort((a, b) => b.discount - a.discount);
+    return {
+      usableCoupons: usable,
+      unusableCount: coupons.length - usable.length,
+      bestCouponId: usable[0]?.coupon.id ?? "",
+    };
+  }, [itemsTotal]);
+
+  const couponId = pickedCouponId ?? bestCouponId;
+  const couponDiscount = usableCoupons.find((c) => c.coupon.id === couponId)?.discount ?? 0;
 
   const total = itemsTotal + shippingFee - couponDiscount;
   const delivery = expectedDeliveryDate(1);
   const address = addresses.find((a) => a.id === addressId)!;
+  const isCustomRequest = requestChoice === CUSTOM_REQUEST;
 
   useEffect(() => {
     if (mounted && items.length === 0 && !placing) {
@@ -68,6 +81,15 @@ export default function CheckoutPage() {
 
   function placeOrder() {
     if (placing || visibleItems.length === 0) return;
+
+    // '직접 입력'을 골라 놓고 비워 두면 배송 기사님께 빈 요청이 전달됩니다.
+    if (isCustomRequest && customRequest.trim() === "") {
+      setRequestError(true);
+      customRequestRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      customRequestRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
     setPlacing(true);
 
     const now = new Date();
@@ -95,7 +117,7 @@ export default function CheckoutPage() {
       recipient: address.recipient,
       phone: address.phone,
       address: `${address.address1} ${address.address2}`,
-      requestNote: requestChoice === "직접 입력" ? customRequest : requestChoice,
+      requestNote: isCustomRequest ? customRequest.trim() : requestChoice,
       expectedDelivery: delivery.iso,
     };
 
@@ -103,10 +125,18 @@ export default function CheckoutPage() {
     setTimeout(() => {
       addOrder(order);
       clearCart();
-      showToast("주문이 완료되었어요!");
       router.push(`/order-complete/${order.id}`);
     }, 900);
   }
+
+  const payLabel = placing ? (
+    <>
+      <Loader2 className="h-5 w-5 animate-spin" />
+      결제 진행 중...
+    </>
+  ) : (
+    `${formatWon(total)} 결제하기`
+  );
 
   return (
     <div className="container-page py-6 md:py-8">
@@ -114,17 +144,8 @@ export default function CheckoutPage() {
         주문서
       </h1>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-10">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <div className="space-y-4">
-          {/* 주문자 */}
-          <section className="rounded-card border border-bark-100 bg-white p-5">
-            <h2 className="text-base font-extrabold text-bark-900">주문자 정보</h2>
-            <p className="mt-3 text-sm text-bark-700">
-              {demoUser.name} · {demoUser.phone}
-            </p>
-            <p className="mt-1 text-xs text-bark-400">{demoUser.email}</p>
-          </section>
-
           {/* 배송지 */}
           <section className="rounded-card border border-bark-100 bg-white p-5">
             <h2 className="flex items-center gap-1.5 text-base font-extrabold text-bark-900">
@@ -136,17 +157,18 @@ export default function CheckoutPage() {
                 <button
                   key={a.id}
                   type="button"
+                  aria-pressed={addressId === a.id}
                   onClick={() => setAddressId(a.id)}
                   className={`rounded-xl border p-4 text-left transition-colors duration-200 ${
                     addressId === a.id
-                      ? "border-leaf-600 bg-leaf-50"
+                      ? "border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600"
                       : "border-bark-200 bg-white hover:border-leaf-300"
                   }`}
                 >
-                  <p className="flex items-center gap-1.5 text-sm font-bold text-bark-800">
+                  <p className="flex items-center gap-1.5 text-[16px] font-bold text-bark-800">
                     {a.label}
                     {a.isDefault && (
-                      <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[12px] font-semibold text-leaf-700">
+                      <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[13px] font-semibold text-leaf-700">
                         기본
                       </span>
                     )}
@@ -154,7 +176,7 @@ export default function CheckoutPage() {
                   <p className="mt-1.5 text-[16px] leading-snug text-bark-600">
                     {a.address1} {a.address2}
                   </p>
-                  <p className="mt-1 text-xs text-bark-400">
+                  <p className="mt-1 text-sm text-bark-400">
                     {a.recipient} · {a.phone}
                   </p>
                 </button>
@@ -168,24 +190,55 @@ export default function CheckoutPage() {
               <select
                 id="request"
                 value={requestChoice}
-                onChange={(e) => setRequestChoice(e.target.value)}
-                className="mt-1.5 h-13 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm text-bark-700 outline-none focus:border-leaf-400"
+                onChange={(e) => {
+                  setRequestChoice(e.target.value);
+                  setRequestError(false);
+                }}
+                className="mt-1.5 h-13 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-[16px] text-bark-700 outline-none focus:border-leaf-400"
               >
                 {requestOptions.map((o) => (
-                  <option key={o} value={o}>{o}</option>
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
                 ))}
               </select>
-              {requestChoice === "직접 입력" && (
-                <input
-                  type="text"
-                  value={customRequest}
-                  onChange={(e) => setCustomRequest(e.target.value)}
-                  placeholder="요청사항을 입력해주세요"
-                  maxLength={50}
-                  className="mt-2 h-13 w-full rounded-xl border border-bark-200 bg-white px-3.5 text-sm outline-none focus:border-leaf-400"
-                />
+              {isCustomRequest && (
+                <div className="mt-2">
+                  <div className="relative">
+                    <input
+                      ref={customRequestRef}
+                      type="text"
+                      value={customRequest}
+                      onChange={(e) => {
+                        setCustomRequest(e.target.value);
+                        if (e.target.value.trim()) setRequestError(false);
+                      }}
+                      placeholder="예) 공동현관 비밀번호 1234#"
+                      maxLength={REQUEST_MAX}
+                      aria-label="배송 요청사항 직접 입력"
+                      aria-invalid={requestError}
+                      aria-describedby={requestError ? "request-error" : undefined}
+                      className={`h-13 w-full rounded-xl border bg-white pl-3.5 pr-16 text-[16px] outline-none ${
+                        requestError ? "border-red-400 focus:border-red-500" : "border-bark-200 focus:border-leaf-400"
+                      }`}
+                    />
+                    <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm tabular-nums text-bark-400">
+                      {customRequest.length}/{REQUEST_MAX}
+                    </span>
+                  </div>
+                  {requestError && (
+                    <p id="request-error" role="alert" className="mt-1.5 text-sm font-medium text-red-600">
+                      요청사항을 입력해 주세요.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
+
+            <p className="mt-4 border-t border-bark-100 pt-3.5 text-sm text-bark-500">
+              주문자 <span className="ml-1 font-medium text-bark-700">{demoUser.name}</span> ·{" "}
+              <span className="whitespace-nowrap">{demoUser.phone}</span>
+            </p>
           </section>
 
           {/* 주문 상품 */}
@@ -209,7 +262,7 @@ export default function CheckoutPage() {
                       <p className="truncate text-sm font-medium text-bark-800">
                         {product.name} {product.unit}
                       </p>
-                      <p className="text-xs text-bark-400">
+                      <p className="text-sm text-bark-400">
                         {item.optionLabel ? `${item.optionLabel} · ` : ""}
                         {item.quantity}개
                       </p>
@@ -221,91 +274,82 @@ export default function CheckoutPage() {
                 );
               })}
             </ul>
-            <p className="mt-2 rounded-xl bg-leaf-50 px-3.5 py-2.5 text-xs text-leaf-800">
-              오늘 주문하면 <b>{delivery.label}</b> 도착 예정이에요. 산지에서 바로 보내드립니다.
+            <p className="mt-2 rounded-xl bg-leaf-50 px-3.5 py-2.5 text-sm text-leaf-800">
+              오늘 주문하면 <b>{delivery.label}</b> 도착 예정이에요.
             </p>
           </section>
 
-          {/* 쿠폰 */}
+          {/* 쿠폰 — 쓸 수 있는 쿠폰만, 할인 금액이 큰 순서로 */}
           <section className="rounded-card border border-bark-100 bg-white p-5">
             <h2 className="flex items-center gap-1.5 text-base font-extrabold text-bark-900">
               <Ticket className="h-4 w-4 text-tangerine-500" />
               쿠폰
             </h2>
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 space-y-2" role="radiogroup" aria-label="쿠폰 선택">
+              {usableCoupons.map(({ coupon, discount }) => (
+                <label
+                  key={coupon.id}
+                  className={`flex min-h-13 cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors ${
+                    couponId === coupon.id
+                      ? "border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600"
+                      : "border-bark-200 hover:border-leaf-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="coupon"
+                    checked={couponId === coupon.id}
+                    onChange={() => setPickedCouponId(coupon.id)}
+                    className="h-5 w-5 shrink-0 accent-leaf-600"
+                  />
+                  <span className="min-w-0 flex-1 text-[16px] font-semibold text-bark-800">{coupon.name}</span>
+                  <span className="shrink-0 text-[16px] font-bold text-tangerine-600">-{formatWon(discount)}</span>
+                </label>
+              ))}
               <label
-                className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-3 text-sm transition-colors ${
-                  couponId === "" ? "border-leaf-600 bg-leaf-50 font-semibold" : "border-bark-200"
+                className={`flex min-h-13 cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors ${
+                  couponId === "" ? "border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600" : "border-bark-200"
                 }`}
               >
-                <span className="text-bark-700">쿠폰 사용 안 함</span>
                 <input
                   type="radio"
                   name="coupon"
                   checked={couponId === ""}
-                  onChange={() => setCouponId("")}
-                  className="h-4 w-4 accent-leaf-600"
+                  onChange={() => setPickedCouponId("")}
+                  className="h-5 w-5 shrink-0 accent-leaf-600"
                 />
+                <span className="text-[16px] text-bark-700">쿠폰 사용 안 함</span>
               </label>
-              {coupons.map((c) => {
-                const usable = itemsTotal >= c.minOrder;
-                return (
-                  <label
-                    key={c.id}
-                    className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition-colors ${
-                      !usable
-                        ? "cursor-not-allowed border-bark-100 bg-cream-50 opacity-60"
-                        : couponId === c.id
-                          ? "cursor-pointer border-leaf-600 bg-leaf-50"
-                          : "cursor-pointer border-bark-200 hover:border-leaf-300"
-                    }`}
-                  >
-                    <span>
-                      <span className={`font-semibold ${usable ? "text-bark-800" : "text-bark-500"}`}>
-                        {c.name}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-bark-400">
-                        {formatWon(c.minOrder)} 이상 주문 시 · ~{c.expiresAt.replaceAll("-", ".")}
-                      </span>
-                    </span>
-                    <input
-                      type="radio"
-                      name="coupon"
-                      disabled={!usable}
-                      checked={couponId === c.id}
-                      onChange={() => setCouponId(c.id)}
-                      className="h-4 w-4 accent-leaf-600"
-                    />
-                  </label>
-                );
-              })}
             </div>
+            {unusableCount > 0 && (
+              <p className="mt-2.5 text-sm text-bark-400">
+                주문 금액 조건이 맞지 않는 쿠폰 {unusableCount}장은 숨겼어요.
+              </p>
+            )}
           </section>
 
           {/* 결제수단 */}
           <section className="rounded-card border border-bark-100 bg-white p-5">
             <h2 className="text-base font-extrabold text-bark-900">결제수단</h2>
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-              {paymentMethods.map(({ value, label, icon: Icon, note }) => (
+            <div className="mt-3 grid grid-cols-3 gap-2" role="radiogroup" aria-label="결제수단">
+              {paymentMethods.map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
                   type="button"
+                  role="radio"
+                  aria-checked={payment === value}
                   onClick={() => setPayment(value)}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-4 transition-colors duration-200 ${
+                  className={`flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors duration-200 ${
                     payment === value
-                      ? "border-leaf-600 bg-leaf-50"
+                      ? "border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600"
                       : "border-bark-200 bg-white hover:border-leaf-300"
                   }`}
                 >
                   <Icon className={`h-6 w-6 ${payment === value ? "text-leaf-700" : "text-bark-400"}`} />
-                  <span className="text-sm font-bold text-bark-800">{label}</span>
-                  <span className="text-[13px] text-bark-400">{note}</span>
+                  <span className="whitespace-nowrap text-sm font-bold text-bark-800">{label}</span>
                 </button>
               ))}
             </div>
-            <p className="mt-3 text-xs text-bark-400">
-              데모 서비스로 실제 결제는 이루어지지 않습니다.
-            </p>
           </section>
         </div>
 
@@ -313,42 +357,31 @@ export default function CheckoutPage() {
         <div className="lg:sticky lg:top-32">
           <div className="rounded-card border border-bark-100 bg-white p-5">
             <h2 className="mb-4 text-base font-extrabold text-bark-900">결제 금액</h2>
-            <PriceSummary
-              itemsTotal={itemsTotal}
-              shippingFee={shippingFee}
-              couponDiscount={couponDiscount}
-            />
+            <PriceSummary itemsTotal={itemsTotal} shippingFee={shippingFee} couponDiscount={couponDiscount} />
             <button
               type="button"
               onClick={placeOrder}
               disabled={placing || visibleItems.length === 0}
               className="btn-primary mt-5 hidden h-14 w-full text-[18px] md:flex"
             >
-              {placing ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  결제 진행 중...
-                </>
-              ) : (
-                `${formatWon(total)} 결제하기`
-              )}
+              {payLabel}
             </button>
-            <p className="mt-3 text-center text-xs text-bark-400">
-              주문 내용을 확인했으며 결제에 동의합니다.
+            <p className="mt-3 text-center text-sm text-bark-400">
+              데모 서비스라 실제로 결제되지 않아요.
             </p>
           </div>
           <Link
             href="/cart"
-            className="mt-3 hidden justify-center text-sm text-bark-400 hover:text-bark-600 md:flex"
+            className="mt-3 hidden h-11 items-center justify-center text-sm text-bark-400 hover:text-bark-600 md:flex"
           >
             장바구니로 돌아가기
           </Link>
         </div>
       </div>
 
-      {/* Mobile sticky CTA */}
+      {/* Mobile sticky CTA — 이 화면에서는 하단 탭을 숨깁니다(MobileNav). */}
       <div
-        className="fixed inset-x-0 bottom-16 z-30 border-t border-bark-100 bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-bark-100 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
         <button
@@ -357,17 +390,9 @@ export default function CheckoutPage() {
           disabled={placing || visibleItems.length === 0}
           className="btn-primary h-13 w-full text-[18px]"
         >
-          {placing ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              결제 진행 중...
-            </>
-          ) : (
-            `${formatWon(total)} 결제하기`
-          )}
+          {payLabel}
         </button>
       </div>
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

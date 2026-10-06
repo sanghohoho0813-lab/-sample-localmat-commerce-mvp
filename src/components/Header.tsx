@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { LayoutGrid, ShoppingCart, User } from "lucide-react";
+import { LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import Logo from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
 import ViewModeSwitch from "@/components/ViewModeSwitch";
@@ -16,7 +16,7 @@ function CartButton() {
     <Link
       href="/cart"
       aria-label={count > 0 ? `장바구니, 상품 ${count}개` : "장바구니"}
-      className="relative flex h-10 w-10 items-center justify-center rounded-full text-bark-700 transition-colors duration-200 hover:bg-cream-100 focus-ring tap-highlight-none"
+      className="relative flex h-11 w-11 items-center justify-center rounded-full text-bark-700 transition-colors duration-200 hover:bg-cream-100 focus-ring tap-highlight-none md:h-10 md:w-10"
     >
       <ShoppingCart className="h-[22px] w-[22px]" />
       {count > 0 && (
@@ -74,6 +74,32 @@ function CategoryNav() {
   );
 }
 
+/** 모바일 검색창 줄 — 홈에서만 크게 보여 줍니다(다른 화면은 상단 줄의 검색 아이콘). */
+function MobileSearchRow() {
+  const pathname = usePathname();
+  if (pathname !== "/") return null;
+  return (
+    <div className="container-page pb-3 md:hidden">
+      <SearchBar />
+    </div>
+  );
+}
+
+/** 모바일 상단 줄의 검색 아이콘 — 홈에서는 바로 아래 검색창이 있어 숨깁니다. */
+function MobileSearchButton() {
+  const pathname = usePathname();
+  if (pathname === "/" || pathname === "/search") return null;
+  return (
+    <Link
+      href="/search"
+      aria-label="검색"
+      className="flex h-11 w-11 items-center justify-center rounded-full text-bark-700 transition-colors duration-200 hover:bg-cream-100 focus-ring md:hidden"
+    >
+      <Search className="h-[22px] w-[22px]" />
+    </Link>
+  );
+}
+
 export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-bark-100 bg-white/95 shadow-header backdrop-blur">
@@ -91,17 +117,20 @@ export default function Header() {
 
         <nav className="ml-auto hidden items-center gap-5 text-sm font-medium text-bark-600 lg:flex">
           <Link href="/farms" className="transition-colors hover:text-leaf-700 focus-ring">
-            스토리
+            농가 스토리
           </Link>
           <Link href="/products?filter=seasonal" className="transition-colors hover:text-leaf-700 focus-ring">
-            이벤트
+            제철 기획전
           </Link>
-          <Link href="/mypage" className="transition-colors hover:text-leaf-700 focus-ring">
-            고객센터
+          <Link href="/orders" className="transition-colors hover:text-leaf-700 focus-ring">
+            주문 내역
           </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-1 lg:ml-0">
+          <Suspense fallback={null}>
+            <MobileSearchButton />
+          </Suspense>
           <Suspense fallback={null}>
             <ViewModeSwitch variant="header" />
           </Suspense>
@@ -116,12 +145,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile search row */}
-      <div className="container-page pb-3 md:hidden">
-        <Suspense fallback={<div className="h-11" />}>
-          <SearchBar />
-        </Suspense>
-      </div>
+      <Suspense fallback={null}>
+        <MobileSearchRow />
+      </Suspense>
 
       <Suspense fallback={<div className="hidden h-12 border-t border-bark-100 md:block" />}>
         <CategoryNav />

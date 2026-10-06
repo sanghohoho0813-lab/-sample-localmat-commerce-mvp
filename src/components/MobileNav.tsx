@@ -13,9 +13,20 @@ const items = [
   { href: "/mypage", label: "마이", icon: User, match: (p: string) => p.startsWith("/mypage") || p.startsWith("/orders") },
 ];
 
+/**
+ * 구매에 집중하는 화면에서는 하단 탭을 숨기고, 각 화면의 구매 버튼 바가 바닥을 씁니다.
+ * (탭 64px + 구매 바 73px가 겹쳐 쌓이면 작은 폰에서 화면의 20% 이상을 차지하고,
+ *  공용 뒤로·앞으로 버튼이 놓일 자리도 사라져 '마이' 탭을 덮게 됩니다.)
+ */
+export function isPurchaseFocusRoute(pathname: string) {
+  return pathname.startsWith("/products/") || pathname === "/cart" || pathname === "/checkout";
+}
+
 export default function MobileNav() {
   const pathname = usePathname();
   const cartCount = useCartCount();
+
+  if (isPurchaseFocusRoute(pathname)) return null;
 
   return (
     <nav

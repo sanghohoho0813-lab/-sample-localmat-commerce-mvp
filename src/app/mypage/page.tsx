@@ -9,5 +9,5 @@ export default async function MyPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  return <MyPageClient key={tab ?? "overview"} initialTab={tab ?? "overview"} />;
+  return <MyPageClient key={tab ?? "wishlist"} initialTab={tab ?? "wishlist"} />;
 }

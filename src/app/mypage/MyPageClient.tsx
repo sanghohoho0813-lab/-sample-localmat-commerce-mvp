@@ -2,16 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  ChevronRight,
-  Clock,
-  Heart,
-  MapPin,
-  Package,
-  Star,
-  Ticket,
-  User,
-} from "lucide-react";
+import { ChevronRight, Clock, Heart, MapPin, Package, Ticket, User } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { addresses, coupons, demoUser } from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
@@ -19,11 +10,10 @@ import { formatWon } from "@/lib/format";
 import { useAllOrders, useRecentStore, useWishlistStore } from "@/lib/store";
 
 const tabs = [
-  { id: "overview", label: "홈" },
   { id: "wishlist", label: "찜" },
+  { id: "recent", label: "최근 본" },
   { id: "coupons", label: "쿠폰" },
   { id: "addresses", label: "배송지" },
-  { id: "recent", label: "최근 본 상품" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -32,8 +22,14 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const validTab = tabs.find((t) => t.id === initialTab)?.id ?? "overview";
-  const [tab, setTab] = useState<TabId>(validTab);
+  const validTab = tabs.find((t) => t.id === initialTab)?.id ?? "wishlist";
+  const [tab, setTabState] = useState<TabId>(validTab);
+
+  // 새로고침·뒤로가기 후에도 보던 탭이 유지되도록 주소만 바꿉니다(페이지 이동 없음).
+  function setTab(next: TabId) {
+    setTabState(next);
+    window.history.replaceState(null, "", `/mypage?tab=${next}`);
+  }
 
   const wishlistIds = useWishlistStore((s) => s.ids);
   const recentIds = useRecentStore((s) => s.ids);
@@ -45,8 +41,6 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
   const recentProducts = mounted
     ? recentIds.map((id) => getProduct(id)).filter((p) => p !== undefined)
     : [];
-
-  const myReviewCount = 3; // 데모 사용자 작성 리뷰 수
 
   return (
     <div className="container-page max-w-4xl py-6 md:py-8">
@@ -72,18 +66,17 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
       </div>
 
       {/* Quick stats */}
-      <div className="mt-4 grid grid-cols-4 gap-2 md:gap-3">
+      <div className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
         {[
-          { label: "주문", value: mounted ? orders.length : 0, href: "/orders", icon: Package },
+          { label: "주문 내역", value: mounted ? orders.length : 0, href: "/orders", icon: Package },
           { label: "찜", value: mounted ? wishlistIds.length : 0, onClick: () => setTab("wishlist"), icon: Heart },
           { label: "쿠폰", value: coupons.length, onClick: () => setTab("coupons"), icon: Ticket },
-          { label: "리뷰", value: myReviewCount, href: "/orders", icon: Star },
         ].map(({ label, value, href, onClick, icon: Icon }) => {
           const inner = (
             <>
               <Icon className="h-5 w-5 text-leaf-600" />
               <span className="text-lg font-extrabold text-bark-900">{value}</span>
-              <span className="text-xs text-bark-400">{label}</span>
+              <span className="text-sm text-bark-500">{label}</span>
             </>
           );
           const cls =
@@ -97,61 +90,27 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-bark-100 scrollbar-none">
+      <div className="mt-6 grid grid-cols-4 border-b border-bark-100 sm:flex" role="tablist" aria-label="마이페이지">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
+            role="tab"
+            aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+            className={`h-12 min-w-0 whitespace-nowrap border-b-2 text-[16px] font-semibold transition-colors duration-200 sm:px-6 ${
               tab === t.id
                 ? "border-leaf-700 text-leaf-800"
                 : "border-transparent text-bark-400 hover:text-bark-600"
             }`}
           >
             {t.label}
+            {t.id === "recent" && <span className="hidden sm:inline"> 상품</span>}
           </button>
         ))}
       </div>
 
       <div className="py-6">
-        {tab === "overview" && (
-          <div className="space-y-4">
-            <section className="rounded-card border border-bark-100 bg-white">
-              {[
-                { href: "/orders", label: "주문 내역", icon: Package },
-                { href: "/mypage?tab=wishlist", label: "찜한 상품", icon: Heart, onClick: () => setTab("wishlist") },
-                { href: "/mypage?tab=coupons", label: "쿠폰함", icon: Ticket, onClick: () => setTab("coupons") },
-                { href: "/mypage?tab=addresses", label: "배송지 관리", icon: MapPin, onClick: () => setTab("addresses") },
-                { href: "/mypage?tab=recent", label: "최근 본 상품", icon: Clock, onClick: () => setTab("recent") },
-              ].map(({ href, label, icon: Icon, onClick }, i, arr) => {
-                const rowClass = `flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-cream-50 ${
-                  i < arr.length - 1 ? "border-b border-bark-100" : ""
-                }`;
-                const inner = (
-                  <>
-                    <Icon className="h-5 w-5 text-leaf-600" />
-                    <span className="flex-1 text-sm font-medium text-bark-800">{label}</span>
-                    <ChevronRight className="h-4 w-4 text-bark-300" />
-                  </>
-                );
-                return onClick ? (
-                  <button key={label} type="button" onClick={onClick} className={rowClass}>
-                    {inner}
-                  </button>
-                ) : (
-                  <Link key={label} href={href} className={rowClass}>
-                    {inner}
-                  </Link>
-                );
-              })}
-            </section>
-            <p className="text-center text-xs text-bark-400">
-              로컬맘 데모 계정으로 둘러보고 계세요 · {demoUser.joinedAt.replaceAll("-", ".")} 가입
-            </p>
-          </div>
-        )}
-
         {tab === "wishlist" &&
           (wishlistProducts.length === 0 ? (
             <EmptyTab
@@ -168,43 +127,45 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
           ))}
 
         {tab === "coupons" && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {coupons.map((c) => (
-              <div
-                key={c.id}
-                className="relative overflow-hidden rounded-card border border-dashed border-tangerine-300 bg-tangerine-50 p-5"
-              >
-                <p className="text-xl font-extrabold text-tangerine-600">
-                  {c.discountType === "percent" ? `${c.value}%` : formatWon(c.value)}
-                </p>
-                <p className="mt-1 text-sm font-bold text-bark-800">{c.name}</p>
-                <p className="mt-0.5 text-xs text-bark-500">{c.description}</p>
-                <p className="mt-2.5 text-[13px] text-bark-400">
-                  {formatWon(c.minOrder)} 이상 주문 시 · ~{c.expiresAt.replaceAll("-", ".")}
-                </p>
-                <Ticket className="absolute -right-2 -top-2 h-14 w-14 rotate-12 text-tangerine-200" />
-              </div>
-            ))}
+          <div>
+            <p className="mb-3 text-[16px] text-bark-600">주문서에서 가장 많이 할인되는 쿠폰이 자동으로 적용돼요.</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {coupons.map((c) => (
+                <div
+                  key={c.id}
+                  className="relative overflow-hidden rounded-card border border-dashed border-tangerine-300 bg-tangerine-50 p-5"
+                >
+                  <p className="text-xl font-extrabold text-tangerine-600">
+                    {c.discountType === "percent" ? `${c.value}%` : formatWon(c.value)}
+                  </p>
+                  <p className="mt-1 text-[16px] font-bold text-bark-800">{c.name}</p>
+                  <p className="mt-2 text-sm text-bark-500">
+                    {formatWon(c.minOrder)} 이상 주문 시 · {c.expiresAt.replaceAll("-", ".")}까지
+                  </p>
+                  <Ticket className="absolute -right-2 -top-2 h-14 w-14 rotate-12 text-tangerine-200" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {tab === "addresses" && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {addresses.map((a) => (
               <div key={a.id} className="rounded-card border border-bark-100 bg-white p-5">
-                <p className="flex items-center gap-1.5 text-sm font-bold text-bark-800">
+                <p className="flex items-center gap-1.5 text-[16px] font-bold text-bark-800">
                   <MapPin className="h-4 w-4 text-leaf-600" />
                   {a.label}
                   {a.isDefault && (
-                    <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[12px] font-semibold text-leaf-700">
+                    <span className="rounded-md bg-leaf-100 px-1.5 py-0.5 text-[13px] font-semibold text-leaf-700">
                       기본 배송지
                     </span>
                   )}
                 </p>
-                <p className="mt-2 text-sm leading-snug text-bark-600">
+                <p className="mt-2 text-[16px] leading-snug text-bark-600">
                   ({a.zip}) {a.address1} {a.address2}
                 </p>
-                <p className="mt-1.5 text-xs text-bark-400">
+                <p className="mt-1.5 text-sm text-bark-400">
                   {a.recipient} · {a.phone}
                 </p>
               </div>
@@ -227,7 +188,6 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
             </div>
           ))}
       </div>
-
     </div>
   );
 }
@@ -237,8 +197,8 @@ function EmptyTab({ icon, title, desc }: { icon: React.ReactNode; title: string;
     <div className="flex flex-col items-center py-16 text-center">
       {icon}
       <p className="mt-4 font-semibold text-bark-700">{title}</p>
-      <p className="mt-1.5 text-sm text-bark-400">{desc}</p>
-      <Link href="/products" className="btn-primary mt-6 h-11 px-5 text-sm">
+      <p className="mt-1.5 text-[16px] text-bark-400">{desc}</p>
+      <Link href="/products" className="btn-primary mt-6 h-12 px-6 text-[16px]">
         상품 둘러보기
       </Link>
     </div>

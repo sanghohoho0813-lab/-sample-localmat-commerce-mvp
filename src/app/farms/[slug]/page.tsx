@@ -72,7 +72,7 @@ export default async function FarmDetailPage({
       </div>
 
       <div className="container-page py-8 md:py-12">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14">
           {/* Story */}
           <div>
             <h2 className="text-lg font-extrabold text-bark-900 md:text-xl">농가 이야기</h2>
