@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { ChevronLeft, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import Logo from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
 import ViewModeSwitch from "@/components/ViewModeSwitch";
 import { categories } from "@/lib/data/categories";
+import { isPurchaseFocusRoute } from "@/components/MobileNav";
 import { useCartCount } from "@/lib/store";
 
 function CartButton() {
@@ -74,21 +75,18 @@ function CategoryNav() {
   );
 }
 
-/** 모바일 검색창 줄 — 홈에서만 크게 보여 줍니다(다른 화면은 상단 줄의 검색 아이콘). */
-function MobileSearchRow() {
+/** PC 헤더 검색창 — 검색 결과 화면에서는 지금 검색어를 그대로 보여 줘 바로 고쳐 검색할 수 있게 합니다. */
+function HeaderSearch() {
   const pathname = usePathname();
-  if (pathname !== "/") return null;
-  return (
-    <div className="container-page pb-3 md:hidden">
-      <SearchBar />
-    </div>
-  );
+  const searchParams = useSearchParams();
+  const q = pathname === "/search" ? (searchParams.get("q") ?? "") : "";
+  return <SearchBar key={q} initialQuery={q} />;
 }
 
-/** 모바일 상단 줄의 검색 아이콘 — 홈에서는 바로 아래 검색창이 있어 숨깁니다. */
+/** 모바일 상단 줄의 검색 아이콘 — 홈에서도 아래로 내려가면 검색창이 사라지므로 늘 둡니다(검색 화면 제외). */
 function MobileSearchButton() {
   const pathname = usePathname();
-  if (pathname === "/" || pathname === "/search") return null;
+  if (pathname === "/search") return null;
   return (
     <Link
       href="/search"
@@ -100,17 +98,58 @@ function MobileSearchButton() {
   );
 }
 
+/** 이 탭에서 앱 안 이동이 있었는지 — 없으면(링크로 바로 들어온 경우) 뒤로 가기가 사이트 밖으로 나가므로 대신 보낼 곳을 씁니다. */
+let inAppNavigations = -1;
+
+function useTrackInAppNavigation() {
+  const pathname = usePathname();
+  useEffect(() => {
+    inAppNavigations += 1;
+  }, [pathname]);
+}
+
+function fallbackFor(pathname: string): string {
+  // 상품 데이터 전체를 모든 화면 번들에 싣지 않도록 카테고리까지는 찾지 않습니다.
+  if (pathname.startsWith("/products/")) return "/products";
+  if (pathname === "/checkout") return "/cart";
+  return "/";
+}
+
+/**
+ * 모바일 뒤로 가기 — 하단 탭을 숨기는 구매 화면(상세·장바구니·주문서)에서
+ * 이전 화면으로 돌아갈 길이 확실히 보이도록 로고 왼쪽에 둡니다.
+ */
+function MobileBackButton() {
+  const pathname = usePathname();
+  const router = useRouter();
+  useTrackInAppNavigation();
+  if (!isPurchaseFocusRoute(pathname)) return null;
+  return (
+    <button
+      type="button"
+      aria-label="뒤로 가기"
+      onClick={() => (inAppNavigations > 0 ? router.back() : router.push(fallbackFor(pathname)))}
+      className="-ml-2.5 -mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bark-800 transition-colors hover:bg-cream-100 focus-ring md:hidden"
+    >
+      <ChevronLeft className="h-6 w-6" />
+    </button>
+  );
+}
+
 export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-bark-100 bg-white/95 shadow-header backdrop-blur">
       {/* Top row */}
       <div className="container-page flex h-14 items-center gap-3 md:h-16 md:gap-6">
+        <Suspense fallback={null}>
+          <MobileBackButton />
+        </Suspense>
         <Logo withTagline />
 
         <div className="hidden flex-1 justify-center md:flex">
           <div className="w-full max-w-[440px]">
-            <Suspense fallback={<div className="h-11" />}>
-              <SearchBar />
+            <Suspense fallback={<div className="h-13" />}>
+              <HeaderSearch />
             </Suspense>
           </div>
         </div>
@@ -144,10 +183,6 @@ export default function Header() {
           <CartButton />
         </div>
       </div>
-
-      <Suspense fallback={null}>
-        <MobileSearchRow />
-      </Suspense>
 
       <Suspense fallback={<div className="hidden h-12 border-t border-bark-100 md:block" />}>
         <CategoryNav />

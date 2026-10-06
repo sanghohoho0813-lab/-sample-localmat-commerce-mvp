@@ -37,8 +37,11 @@ export default function ProductCard({
   product,
   priority = false,
   sizes,
+  showFarm = true,
 }: {
   product: Product;
+  /** 농가 페이지처럼 이미 농가가 분명한 곳에서는 끕니다. */
+  showFarm?: boolean;
   /** 첫 화면(above the fold) 카드에 지정해 LCP를 앞당깁니다. */
   priority?: boolean;
   sizes?: string;
@@ -95,7 +98,7 @@ export default function ProductCard({
       </div>
 
       <div className="mt-2.5 px-0.5">
-        <p className="truncate text-xs text-bark-400">{farm?.name}</p>
+        {showFarm && <p className="truncate text-xs text-bark-400">{farm?.name}</p>}
         {/* 상품명이 한 줄이어도 두 줄 높이를 잡아 둬서, 같은 줄 카드끼리 가격 위치가 맞습니다. */}
         <h3 className="mt-0.5 line-clamp-2 min-h-[2.75em] text-sm font-medium leading-snug text-bark-800 transition-colors group-hover:text-leaf-700">
           {product.name} {product.unit}

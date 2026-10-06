@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { SearchX } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import FarmCard from "@/components/FarmCard";
 import ProductCard from "@/components/ProductCard";
 import SearchBar from "@/components/SearchBar";
@@ -78,14 +79,14 @@ export default function SearchClient({ query }: { query: string }) {
           </h1>
 
           {totalCount === 0 ? (
-            <div className="mt-8 flex flex-col items-center py-10 text-center">
-              <SearchX className="h-12 w-12 text-bark-300" />
-              <p className="mt-4 text-lg font-semibold text-bark-700">검색 결과가 없어요</p>
-              <p className="mt-1.5 text-bark-500">이런 검색어는 어떠세요?</p>
-              <div className="mt-6">
-                <KeywordChips />
-              </div>
-            </div>
+            <EmptyState
+              icon={SearchX}
+              title="검색 결과가 없어요"
+              description="이런 검색어는 어떠세요?"
+              className="py-12 md:py-16"
+            >
+              <KeywordChips />
+            </EmptyState>
           ) : (
             <>
               <div className="mt-4 flex gap-1 border-b border-bark-100">

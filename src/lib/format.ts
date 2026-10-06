@@ -37,3 +37,19 @@ export function makeOrderNumber(now: Date): string {
   const seq = String(Math.floor((now.getTime() / 1000) % 10000)).padStart(4, "0");
   return `LM${y}${m}${day}-${seq}`;
 }
+
+/**
+ * 주문 상품 표기 — 크기·수량 옵션(예: "1kg (2팩)")은 상품 단위를 대신해 이름 뒤에 붙이고,
+ * 그 밖의 옵션(예: "구이용")은 따로 보여 줍니다. ("설향 딸기 500g · 1kg (2팩)" 같은 모순을 막습니다.)
+ */
+export function itemLabel(
+  name: string,
+  unit: string,
+  optionLabel?: string
+): { title: string; option?: string } {
+  const sizeOption = !!optionLabel && /^\d/.test(optionLabel);
+  return {
+    title: `${name} ${sizeOption ? optionLabel : unit}`,
+    option: sizeOption ? undefined : optionLabel,
+  };
+}

@@ -7,7 +7,7 @@ import OrderProgress from "@/components/OrderProgress";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
 import { getProduct } from "@/lib/data/products";
-import { formatDate, formatWon } from "@/lib/format";
+import { formatDate, formatWon, itemLabel } from "@/lib/format";
 import { isFreshOrder, useAllOrders } from "@/lib/store";
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
@@ -73,7 +73,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         </section>
 
         <section className="rounded-card border border-bark-100 bg-white p-5">
-          <h2 className="flex items-center gap-1.5 text-sm font-extrabold text-bark-900">
+          <h2 className="flex items-center gap-1.5 text-base font-extrabold text-bark-900">
             <Truck className="h-4 w-4 text-leaf-600" />
             배송 정보
           </h2>
@@ -94,32 +94,35 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         </section>
 
         <section className="rounded-card border border-bark-100 bg-white p-5">
-          <h2 className="text-sm font-extrabold text-bark-900">주문 상품 {order.items.length}개</h2>
+          <h2 className="text-base font-extrabold text-bark-900">주문 상품 {order.items.length}개</h2>
           <ul className="mt-2 divide-y divide-bark-100">
             {order.items.map((item) => {
               const product = getProduct(item.productId);
+              const label = itemLabel(item.name, item.unit, item.optionLabel);
               return (
-                <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex items-center gap-3 py-3">
+                <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-3 py-3">
                   {product && (
-                    <ProductImage
-                      product={product}
-                      className="w-14 rounded-lg border border-bark-100"
-                      iconSize="text-xl"
-                      sizes="56px"
-                    />
+                    <Link href={`/products/${product.slug}`} className="shrink-0">
+                      <ProductImage
+                        product={product}
+                        className="w-14 rounded-lg border border-bark-100"
+                        iconSize="text-xl"
+                        sizes="56px"
+                      />
+                    </Link>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-bark-800">
-                      {item.name} {item.unit}
-                    </p>
-                    <p className="text-sm text-bark-400">
-                      {item.optionLabel ? `${item.optionLabel} · ` : ""}
-                      {item.quantity}개
-                    </p>
+                    <p className="line-clamp-2 text-sm font-medium leading-snug text-bark-800">{label.title}</p>
+                    <div className="mt-1 flex items-baseline justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm text-bark-400">
+                        {label.option ? `${label.option} · ` : ""}
+                        {item.quantity}개
+                      </p>
+                      <p className="shrink-0 text-sm font-bold text-bark-900">
+                        {formatWon(item.price * item.quantity)}
+                      </p>
+                    </div>
                   </div>
-                  <p className="shrink-0 text-sm font-bold text-bark-900">
-                    {formatWon(item.price * item.quantity)}
-                  </p>
                 </li>
               );
             })}
@@ -127,7 +130,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         </section>
 
         <section className="rounded-card border border-bark-100 bg-white p-5">
-          <h2 className="mb-4 text-sm font-extrabold text-bark-900">결제 금액</h2>
+          <h2 className="mb-4 text-base font-extrabold text-bark-900">결제 금액</h2>
           <PriceSummary
             itemsTotal={order.itemsTotal}
             shippingFee={order.shippingFee}
@@ -137,10 +140,10 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
-        <Link href="/orders" className="btn-secondary h-13 flex-1 text-[18px]">
+        <Link href="/orders" className="btn-secondary h-13 text-[18px] sm:flex-1">
           {fresh ? "주문 내역 보기" : "주문 내역으로"}
         </Link>
-        <Link href="/products" className="btn-outline h-13 flex-1 text-[18px] font-bold">
+        <Link href="/products" className="btn-outline h-13 text-[18px] font-bold sm:flex-1">
           쇼핑 계속하기
         </Link>
       </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronRight, Clock, Heart, MapPin, Package, Ticket, User } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import ProductCard from "@/components/ProductCard";
 import { addresses, coupons, demoUser } from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
@@ -44,6 +45,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
 
   return (
     <div className="container-page max-w-4xl py-6 md:py-8">
+      <h1 className="sr-only">마이페이지</h1>
       {/* Profile */}
       <div className="flex items-center gap-4 rounded-card bg-gradient-to-br from-leaf-700 to-leaf-600 p-6 text-white">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20">
@@ -111,12 +113,22 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
       </div>
 
       <div className="py-6">
-        {tab === "wishlist" &&
+        {/* 저장된 찜·최근 본 목록을 읽기 전에 '비어 있어요'가 번쩍이지 않도록 */}
+        {!mounted && (tab === "wishlist" || tab === "recent") && (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4" aria-busy="true">
+            {[0, 1].map((i) => (
+              <div key={i} className="aspect-square animate-pulse rounded-card bg-white/70" />
+            ))}
+          </div>
+        )}
+
+        {mounted && tab === "wishlist" &&
           (wishlistProducts.length === 0 ? (
-            <EmptyTab
-              icon={<Heart className="h-10 w-10 text-bark-300" />}
+            <EmptyState
+              icon={Heart}
               title="찜한 상품이 아직 없어요"
-              desc="마음에 드는 상품의 하트를 눌러 보관해보세요."
+              description="마음에 드는 상품의 하트를 눌러 보관해 보세요."
+              action={{ label: "상품 둘러보기", href: "/products" }}
             />
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
@@ -173,12 +185,13 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
           </div>
         )}
 
-        {tab === "recent" &&
+        {mounted && tab === "recent" &&
           (recentProducts.length === 0 ? (
-            <EmptyTab
-              icon={<Clock className="h-10 w-10 text-bark-300" />}
+            <EmptyState
+              icon={Clock}
               title="최근 본 상품이 없어요"
-              desc="상품을 둘러보면 여기에 차곡차곡 담아둘게요."
+              description="둘러본 상품을 여기에 모아 둘게요."
+              action={{ label: "상품 둘러보기", href: "/products" }}
             />
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
@@ -188,19 +201,6 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
             </div>
           ))}
       </div>
-    </div>
-  );
-}
-
-function EmptyTab({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="flex flex-col items-center py-16 text-center">
-      {icon}
-      <p className="mt-4 font-semibold text-bark-700">{title}</p>
-      <p className="mt-1.5 text-[16px] text-bark-400">{desc}</p>
-      <Link href="/products" className="btn-primary mt-6 h-12 px-6 text-[16px]">
-        상품 둘러보기
-      </Link>
     </div>
   );
 }

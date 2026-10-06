@@ -18,7 +18,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const farm = getFarm(slug);
-  return { title: farm ? farm.name : "농가" };
+  if (!farm) notFound();
+  return { title: farm.name };
 }
 
 export default async function FarmDetailPage({
@@ -46,9 +47,9 @@ export default async function FarmDetailPage({
             <ChevronRight className="h-3 w-3" />
             <span className="text-leaf-50">{farm.name}</span>
           </nav>
-          <p className="text-xl font-bold leading-snug md:text-3xl [text-wrap:balance]">
+          <h1 className="text-xl font-bold leading-snug md:text-3xl [text-wrap:balance]">
             “{farm.quote}”
-          </p>
+          </h1>
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-leaf-100">
             <span className="font-bold text-white">{farm.name}</span>
             <span className="flex items-center gap-1">
@@ -68,6 +69,16 @@ export default async function FarmDetailPage({
               </span>
             ))}
           </div>
+          {/* 이야기를 다 읽지 않아도 바로 상품으로 — 농가 페이지의 다음 행동 */}
+          {farmProducts.length > 0 && (
+            <a
+              href="#farm-products"
+              className="mt-6 inline-flex h-12 items-center gap-1.5 rounded-xl bg-white px-5 text-[16px] font-bold text-leaf-800 transition-colors hover:bg-leaf-50"
+            >
+              판매 상품 {farmProducts.length}개 보기
+              <ChevronRight className="h-4 w-4" />
+            </a>
+          )}
         </div>
       </div>
 
@@ -84,33 +95,20 @@ export default async function FarmDetailPage({
             </div>
           </div>
 
-          {/* Facts */}
-          <div className="space-y-4">
+          {/* 재배 방식 — 생산 품목은 바로 아래 판매 상품과 겹쳐 따로 두지 않습니다. */}
+          <div className="lg:pt-10">
             <div className="rounded-card border border-bark-100 bg-white p-5">
-              <h3 className="flex items-center gap-1.5 text-sm font-bold text-bark-900">
+              <h2 className="flex items-center gap-1.5 text-base font-bold text-bark-900">
                 <Sprout className="h-4 w-4 text-leaf-600" />
                 재배 방식
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-bark-600">{farm.method}</p>
-            </div>
-            <div className="rounded-card border border-bark-100 bg-white p-5">
-              <h3 className="text-sm font-bold text-bark-900">생산 품목</h3>
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
-                {farm.items.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-pill bg-leaf-50 px-3 py-1 text-[16px] font-medium text-leaf-700"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
+              </h2>
+              <p className="mt-2 text-[16px] leading-relaxed text-bark-600">{farm.method}</p>
             </div>
           </div>
         </div>
 
         {/* Products */}
-        <section className="mt-12 md:mt-16">
+        <section id="farm-products" className="mt-12 scroll-mt-20 md:mt-16 md:scroll-mt-32">
           <h2 className="mb-5 text-lg font-extrabold text-bark-900 md:text-2xl">
             {farm.name}의 판매 상품
           </h2>
@@ -121,7 +119,7 @@ export default async function FarmDetailPage({
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-4 md:gap-x-5">
               {farmProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p.id} product={p} showFarm={false} />
               ))}
             </div>
           )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Clock, ShieldCheck, Ticket, Truck, Wallet } from "lucide-react";
 import HeroBanner from "@/components/HeroBanner";
 import HomeProductTabs from "@/components/HomeProductTabs";
+import SearchBar from "@/components/SearchBar";
 import FarmCard from "@/components/FarmCard";
 import SectionHeader from "@/components/SectionHeader";
 import { categories } from "@/lib/data/categories";
@@ -9,18 +10,24 @@ import { farms } from "@/lib/data/farms";
 import { formatPrice } from "@/lib/format";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/data/etc";
 
-/** 쇼핑 전에 궁금한 것만 — 배송·비용·품질 */
+/** 쇼핑 전에 궁금한 것만 — 배송·비용·품질 (2열 모바일에서도 한두 줄에 끝나도록 짧게) */
 const promises = [
-  { icon: Truck, title: "산지에서 바로 발송" },
-  { icon: Clock, title: "오후 2시 전 주문, 당일 출고" },
-  { icon: Wallet, title: `${formatPrice(FREE_SHIPPING_THRESHOLD)}원 이상 무료배송` },
-  { icon: ShieldCheck, title: "인증 농가 상품만" },
+  { icon: Truck, title: "산지 직송" },
+  { icon: Clock, title: "2시 전 주문 당일 출고" },
+  { icon: Wallet, title: `${formatPrice(FREE_SHIPPING_THRESHOLD / 10000)}만원 이상 무료배송` },
+  { icon: ShieldCheck, title: "인증 농가 상품" },
 ];
 
 export default function HomePage() {
   return (
     <div className="space-y-10 md:space-y-16">
-      <HeroBanner />
+      {/* 모바일 검색창 — 헤더에 붙여 두면 스크롤 내내 화면 위 120px를 차지해서, 홈 맨 위에만 두고 함께 스크롤되게 합니다. */}
+      <div className="container-page pt-3 md:hidden">
+        <SearchBar />
+      </div>
+      <div className="!mt-0">
+        <HeroBanner />
+      </div>
 
       {/* 카테고리 바로가기 (모바일 — PC는 상단 카테고리 바) */}
       <section className="container-page !mt-6 md:hidden" aria-label="카테고리">

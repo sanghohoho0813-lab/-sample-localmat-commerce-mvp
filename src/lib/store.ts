@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { CartItem, Order, Review } from "@/lib/types";
 import { getProduct } from "@/lib/data/products";
 import { demoUser, seedOrders } from "@/lib/data/etc";
@@ -82,6 +82,25 @@ export const useCartStore = create<CartState>()(
       clear: () => set({ items: [] }),
     }),
     { name: "localmat-cart" }
+  )
+);
+
+// ── Buy now (바로 구매) ─────────────────────────────────
+// 장바구니를 거치지 않고 이 상품만 주문합니다. 장바구니에 담아 둔 다른 상품은 건드리지 않습니다.
+// 새로고침해도 주문서가 유지되도록 탭 단위(sessionStorage)로만 저장합니다.
+
+interface BuyNowState {
+  item: CartItem | null;
+  set: (item: CartItem | null) => void;
+}
+
+export const useBuyNowStore = create<BuyNowState>()(
+  persist(
+    (set) => ({
+      item: null,
+      set: (item) => set({ item }),
+    }),
+    { name: "localmat-buynow", storage: createJSONStorage(() => sessionStorage) }
   )
 );
 

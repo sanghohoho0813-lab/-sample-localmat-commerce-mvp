@@ -22,7 +22,7 @@ export default function WishlistButton({
   const showToast = useToastStore((s) => s.show);
   const isLiked = mounted && liked;
 
-  const dims = size === "sm" ? "h-9 w-9" : "h-12 w-12";
+  const dims = size === "sm" ? "h-10 w-10" : "h-12 w-12";
   const iconDims = size === "sm" ? "h-[18px] w-[18px]" : "h-6 w-6";
 
   return (
@@ -33,11 +33,24 @@ export default function WishlistButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggle(productId);
-        showToast(
-          isLiked ? "찜 목록에서 뺐어요." : "찜 목록에 담았어요.",
-          isLiked ? undefined : { label: "보러가기", href: "/mypage?tab=wishlist" }
-        );
+        if (isLiked) {
+          // 찜 목록 화면에서 누르면 카드가 바로 사라지므로 원래 자리로 되돌릴 수 있게 합니다.
+          const index = useWishlistStore.getState().ids.indexOf(productId);
+          toggle(productId);
+          showToast("찜 목록에서 뺐어요.", {
+            label: "되돌리기",
+            onClick: () =>
+              useWishlistStore.setState((s) => {
+                if (s.ids.includes(productId)) return s;
+                const ids = [...s.ids];
+                ids.splice(Math.max(0, index), 0, productId);
+                return { ids };
+              }),
+          });
+        } else {
+          toggle(productId);
+          showToast("찜 목록에 담았어요.", { label: "보러가기", href: "/mypage?tab=wishlist" });
+        }
       }}
       className={`flex ${dims} items-center justify-center rounded-full bg-white/90 shadow-soft backdrop-blur transition-transform duration-200 hover:scale-110 active:scale-95 tap-highlight-none ${className}`}
     >

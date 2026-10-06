@@ -5,9 +5,8 @@ import MiraeLockup from "@/components/mirae/MiraeLockup";
 
 export default function Footer() {
   return (
-    // pb-32: 모바일에서 하단 내비게이션(64px)과 Sticky 구매 CTA가 푸터 위에 떠 있어
-    // 하단 스트립(뷰 모드 전환 버튼)이 가리지 않도록 여유를 둡니다.
-    <footer className="border-t border-bark-100 bg-white pt-12 pb-32 md:pt-16 md:pb-0">
+    // 모바일 하단 여백: 하단 탭(64px) 또는 구매 바(73px)가 푸터 끝을 가리지 않을 만큼만 + 홈 인디케이터 영역
+    <footer className="border-t border-bark-100 bg-white pb-[calc(6rem+env(safe-area-inset-bottom))] pt-12 md:pb-0 md:pt-16">
       {/* 리치 푸터 — 데스크톱 전용 */}
       <div className="container-page hidden gap-8 pb-10 md:grid md:grid-cols-[1.4fr_1fr_1fr]">
         <div>

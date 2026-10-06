@@ -16,7 +16,14 @@ import { products } from "@/lib/data/products";
 import { getProductReviews } from "@/lib/data/reviews";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
 import { expectedDeliveryDate, formatDate, formatPrice, formatWon } from "@/lib/format";
-import { maxQuantityFor, useCartStore, useRecentStore, useReviewStore, useToastStore } from "@/lib/store";
+import {
+  maxQuantityFor,
+  useBuyNowStore,
+  useCartStore,
+  useRecentStore,
+  useReviewStore,
+  useToastStore,
+} from "@/lib/store";
 import type { Product } from "@/lib/types";
 
 // 짧은 두 글자 라벨 — 좁은 폰에서도 다섯 탭이 가로 스크롤 없이 한 줄에 들어갑니다.
@@ -53,6 +60,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const tabsAnchor = useRef<HTMLDivElement>(null);
 
   const addItem = useCartStore((s) => s.addItem);
+  const setBuyNow = useBuyNowStore((s) => s.set);
   const showToast = useToastStore((s) => s.show);
   const pushRecent = useRecentStore((s) => s.push);
   const myReviews = useReviewStore((s) => s.reviews);
@@ -100,9 +108,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     );
   }
 
+  /** 바로 구매 — 장바구니를 거치지 않고 이 상품만 담긴 주문서로 바로 갑니다. */
   function buyNow() {
-    addItem(product.id, quantity, optionLabel);
-    router.push("/cart");
+    setBuyNow({ productId: product.id, optionLabel, quantity: Math.min(quantity, maxQuantity) });
+    router.push("/checkout?mode=now");
   }
 
   /** 탭을 바꾸거나 별점을 누르면 탭 영역 맨 위로 — 아래로 내려가 있어도 새 내용의 처음부터 읽습니다. */

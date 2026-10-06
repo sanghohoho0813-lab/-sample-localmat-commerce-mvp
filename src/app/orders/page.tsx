@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, ChevronRight, PackageSearch } from "lucide-react";
 import OrderProgress from "@/components/OrderProgress";
+import EmptyState from "@/components/EmptyState";
 import ProductImage from "@/components/ProductImage";
 import ReviewModal from "@/components/ReviewModal";
 import { getProduct } from "@/lib/data/products";
-import { formatDate, formatWon } from "@/lib/format";
+import { formatDate, formatWon, itemLabel } from "@/lib/format";
 import { reviewKey, useAllOrders, useReviewStore, useToastStore } from "@/lib/store";
 import type { OrderStatus, Product } from "@/lib/types";
 
@@ -46,14 +47,17 @@ export default function OrdersPage() {
         주문 내역
       </h1>
 
-      {!mounted ? null : orders.length === 0 ? (
-        <div className="flex flex-col items-center py-20 text-center">
-          <PackageSearch className="h-12 w-12 text-bark-300" />
-          <p className="mt-4 font-semibold text-bark-700">아직 주문 내역이 없어요</p>
-          <Link href="/products" className="btn-primary mt-5 h-12 px-6 text-[16px]">
-            쇼핑하러 가기
-          </Link>
+      {!mounted ? (
+        <div className="space-y-4" aria-busy="true">
+          <div className="h-56 animate-pulse rounded-card bg-white/70" />
+          <div className="h-40 animate-pulse rounded-card bg-white/70" />
         </div>
+      ) : orders.length === 0 ? (
+        <EmptyState
+          icon={PackageSearch}
+          title="아직 주문 내역이 없어요"
+          action={{ label: "쇼핑하러 가기", href: "/products" }}
+        />
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
@@ -105,9 +109,12 @@ export default function OrdersPage() {
                         ) : null}
                         <div className="min-w-0 flex-1">
                           <p className="line-clamp-2 text-sm font-semibold leading-snug text-bark-800">
-                            {item.name} {item.unit}
+                            {itemLabel(item.name, item.unit, item.optionLabel).title}
                           </p>
-                          <p className="mt-0.5 text-sm text-bark-400">
+                          <p className="mt-0.5 truncate text-sm text-bark-400">
+                            {itemLabel(item.name, item.unit, item.optionLabel).option
+                              ? `${item.optionLabel} · `
+                              : ""}
                             {item.quantity}개 · {formatWon(item.price * item.quantity)}
                           </p>
                         </div>

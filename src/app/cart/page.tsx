@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Trash2, Truck } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import FreeShippingBar from "@/components/FreeShippingBar";
 import PriceSummary from "@/components/PriceSummary";
 import ProductCard from "@/components/ProductCard";
@@ -10,7 +11,7 @@ import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
 import { getProduct, products } from "@/lib/data/products";
-import { expectedDeliveryDate, formatWon } from "@/lib/format";
+import { expectedDeliveryDate, formatWon, itemLabel } from "@/lib/format";
 import { cartItemUnitPrice, maxQuantityFor, useCartStore, useToastStore } from "@/lib/store";
 
 export default function CartPage() {
@@ -59,15 +60,15 @@ export default function CartPage() {
 
   if (visibleItems.length === 0) {
     return (
-      <div className="container-page flex flex-col items-center py-24 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-cream-200 text-bark-300">
-          <ShoppingCart className="h-9 w-9" />
-        </span>
-        <h1 className="mt-5 text-lg font-extrabold text-bark-900">장바구니가 비어 있어요</h1>
-        <p className="mt-2 text-sm text-bark-500">오늘 가장 신선한 제철 먹거리를 만나보세요.</p>
-        <Link href="/products?filter=seasonal" className="btn-primary mt-6 h-12 px-6 text-[18px]">
-          제철 상품 보러가기
-        </Link>
+      <div className="container-page">
+        <EmptyState
+          as="h1"
+          icon={ShoppingCart}
+          title="장바구니가 비어 있어요"
+          description="오늘 가장 신선한 제철 먹거리를 만나보세요."
+          action={{ label: "제철 상품 보러가기", href: "/products?filter=seasonal" }}
+          className="py-20 md:py-24"
+        />
       </div>
     );
   }
@@ -105,9 +106,9 @@ export default function CartPage() {
                           href={`/products/${product.slug}`}
                           className="line-clamp-2 text-sm font-semibold text-bark-800 hover:text-leaf-700"
                         >
-                          {product.name} {product.unit}
+                          {itemLabel(product.name, product.unit, item.optionLabel).title}
                         </Link>
-                        {item.optionLabel && (
+                        {itemLabel(product.name, product.unit, item.optionLabel).option && (
                           <p className="mt-0.5 text-sm text-bark-400">{item.optionLabel}</p>
                         )}
                       </div>
