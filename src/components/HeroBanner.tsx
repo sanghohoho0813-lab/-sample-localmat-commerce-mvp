@@ -32,7 +32,7 @@ export default function HeroBanner() {
           href="/products?filter=seasonal"
           className="absolute right-5 top-5 z-10 hidden h-24 w-24 flex-col items-center justify-center rounded-full bg-white/95 text-center shadow-lift backdrop-blur transition-transform duration-200 hover:scale-105 focus-ring lg:flex"
         >
-          <span className="text-[13px] font-semibold text-tangerine-500">지금이 제철!</span>
+          <span className="text-[13px] font-semibold text-tangerine-600">지금이 제철!</span>
           <span className="mt-0.5 text-sm font-extrabold leading-tight text-leaf-800">
             제철 먹거리
             <br />

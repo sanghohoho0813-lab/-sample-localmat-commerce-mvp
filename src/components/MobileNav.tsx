@@ -48,7 +48,7 @@ export default function MobileNav() {
               <span className="relative">
                 <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 2} />
                 {href === "/cart" && cartCount > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-tangerine-500 px-1 text-[12px] font-bold text-white">
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-tangerine-600 px-1 text-[12px] font-bold text-white">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}

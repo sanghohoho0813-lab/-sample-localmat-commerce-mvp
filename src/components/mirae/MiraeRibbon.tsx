@@ -6,7 +6,7 @@ import MiraeMark from "@/components/mirae/MiraeMark";
  */
 export default function MiraeRibbon() {
   return (
-    <div className="bg-mirae-ink text-white">
+    <aside aria-label="제작사 안내" className="bg-mirae-ink text-white">
       <div className="container-page flex h-12 items-center justify-between gap-3">
         <p className="flex min-w-0 items-center gap-2">
           <MiraeMark size={26} className="h-[26px] w-[26px] shrink-0" />
@@ -20,6 +20,6 @@ export default function MiraeRibbon() {
           MIRAE<span className="hidden sm:inline"> AI LAB</span>
         </span>
       </div>
-    </div>
+    </aside>
   );
 }

@@ -7,16 +7,12 @@ import EmptyState from "@/components/EmptyState";
 import FarmCard from "@/components/FarmCard";
 import ProductCard from "@/components/ProductCard";
 import SearchBar from "@/components/SearchBar";
-import { getCategory } from "@/lib/data/categories";
-import { farms, getFarm } from "@/lib/data/farms";
-import { products } from "@/lib/data/products";
+import { searchCatalog } from "@/lib/search";
+import { useTabs } from "@/lib/useTabs";
+
+const RESULT_TABS = ["products", "farms"] as const;
 
 const popularKeywords = ["딸기", "전복", "유정란", "제주", "고구마", "선물세트"];
-
-/** 대소문자·띄어쓰기를 무시하고 비교합니다. ('설향딸기'로도 '설향 딸기'를 찾습니다) */
-function normalize(text: string) {
-  return text.toLowerCase().replace(/\s+/g, "");
-}
 
 function KeywordChips() {
   return (
@@ -35,26 +31,13 @@ function KeywordChips() {
 }
 
 export default function SearchClient({ query }: { query: string }) {
-  const { matchedProducts, matchedFarms } = useMemo(() => {
-    if (!query) return { matchedProducts: [], matchedFarms: [] };
-    const q = normalize(query);
-    const matchedProducts = products.filter((p) => {
-      const farm = getFarm(p.farmId);
-      const category = getCategory(p.categoryId);
-      return normalize(
-        [p.name, p.region, p.summary, p.unit, farm?.name ?? "", category?.name ?? ""].join(" ")
-      ).includes(q);
-    });
-    const matchedFarms = farms.filter((f) =>
-      normalize([f.name, f.region, f.owner, f.items.join(" ")].join(" ")).includes(q)
-    );
-    return { matchedProducts, matchedFarms };
-  }, [query]);
+  const { products: matchedProducts, farms: matchedFarms } = useMemo(() => searchCatalog(query), [query]);
 
   // 결과가 있는 쪽 탭을 먼저 보여 줍니다(예: 농부 이름으로 검색하면 '농가' 탭).
   const [tab, setTab] = useState<"products" | "farms">(
     matchedProducts.length === 0 && matchedFarms.length > 0 ? "farms" : "products"
   );
+  const { tabListProps, tabProps, panelProps } = useTabs(RESULT_TABS, tab, setTab);
 
   const totalCount = matchedProducts.length + matchedFarms.length;
 
@@ -89,7 +72,7 @@ export default function SearchClient({ query }: { query: string }) {
             </EmptyState>
           ) : (
             <>
-              <div className="mt-4 flex gap-1 border-b border-bark-100">
+              <div {...tabListProps} aria-label="검색 결과 종류" className="mt-4 flex gap-1 border-b border-bark-100">
                 {(
                   [
                     { id: "products", label: `상품 ${matchedProducts.length}` },
@@ -98,8 +81,7 @@ export default function SearchClient({ query }: { query: string }) {
                 ).map((t) => (
                   <button
                     key={t.id}
-                    type="button"
-                    onClick={() => setTab(t.id)}
+                    {...tabProps(t.id)}
                     className={`h-12 border-b-2 px-4 text-[16px] font-semibold transition-colors duration-200 ${
                       tab === t.id
                         ? "border-leaf-700 text-leaf-800"
@@ -111,7 +93,8 @@ export default function SearchClient({ query }: { query: string }) {
                 ))}
               </div>
 
-              <div className="mt-6">
+              <div {...panelProps} className="mt-6 outline-none">
+                <h2 className="sr-only">{tab === "products" ? "상품 검색 결과" : "농가 검색 결과"}</h2>
                 {tab === "products" ? (
                   matchedProducts.length === 0 ? (
                     <p className="py-14 text-center text-sm text-bark-400">일치하는 상품이 없어요.</p>

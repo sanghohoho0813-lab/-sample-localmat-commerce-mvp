@@ -53,9 +53,7 @@ export default function ProductCard({
   const lowStock = product.stock <= LOW_STOCK_THRESHOLD;
   const badge = primaryBadge(product.badges);
 
-  function quickAdd(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  function quickAdd() {
     const defaultOption = product.options?.[0]?.label;
     const { quantity, capped } = addItem(product.id, 1, defaultOption);
     showToast(
@@ -68,28 +66,16 @@ export default function ProductCard({
     );
   }
 
+  // 카드 전체를 누르면 상세로 가되, 찜·담기 버튼을 링크 안에 넣지 않습니다(링크 안 버튼은 HTML 규칙 위반이고
+  // 스크린리더·키보드 포커스가 꼬입니다). 상품명 링크를 카드 전체로 늘리는 'stretched link' 방식입니다.
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group block rounded-card focus-ring tap-highlight-none"
-      aria-label={`${product.name} ${product.unit}`}
-    >
+    <article className="group relative tap-highlight-none">
       <div className="relative">
         <div className="overflow-hidden rounded-card border border-bark-100 bg-white transition-shadow duration-300 group-hover:shadow-lift">
           <div className="transition-transform duration-500 ease-out group-hover:scale-[1.05]">
             <ProductImage product={product} priority={priority} sizes={sizes} className="w-full" />
           </div>
         </div>
-
-        <WishlistButton productId={product.id} className="absolute right-2.5 top-2.5" />
-        <button
-          type="button"
-          onClick={quickAdd}
-          aria-label={`${product.name} 장바구니 담기`}
-          className="absolute bottom-2.5 right-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-leaf-700 shadow-soft transition-all duration-200 hover:bg-leaf-600 hover:text-white active:scale-95 focus-ring md:h-10 md:w-10 md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-visible:translate-y-0 md:group-focus-visible:opacity-100"
-        >
-          <ShoppingCart className="h-[18px] w-[18px]" />
-        </button>
         {badge && (
           <div className="pointer-events-none absolute left-2.5 top-2.5">
             <Badge label={badge} />
@@ -101,10 +87,19 @@ export default function ProductCard({
         {showFarm && <p className="truncate text-xs text-bark-400">{farm?.name}</p>}
         {/* 상품명이 한 줄이어도 두 줄 높이를 잡아 둬서, 같은 줄 카드끼리 가격 위치가 맞습니다. */}
         <h3 className="mt-0.5 line-clamp-2 min-h-[2.75em] text-sm font-medium leading-snug text-bark-800 transition-colors group-hover:text-leaf-700">
-          {product.name} {product.unit}
+          <Link
+            href={`/products/${product.slug}`}
+            className="outline-none focus-visible:ring-0 focus-visible:ring-offset-0 after:absolute after:inset-0 after:rounded-card after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-leaf-500 focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-cream-100"
+          >
+            {product.name} {product.unit}
+          </Link>
         </h3>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-          {rate !== null && <span className="text-base font-extrabold text-tangerine-500">{rate}%</span>}
+          {rate !== null && (
+            <span className="text-base font-extrabold text-tangerine-600">
+              {rate}%<span className="sr-only"> 할인</span>
+            </span>
+          )}
           <span className="text-base font-extrabold text-bark-900">
             {formatPrice(product.price)}
             <span className="text-sm font-bold">원</span>
@@ -117,6 +112,19 @@ export default function ProductCard({
           )}
         </div>
       </div>
-    </Link>
+
+      {/* 링크 위에 올라오는 버튼들 — z-10으로 늘어난 링크보다 위에 둡니다. */}
+      <WishlistButton productId={product.id} className="absolute right-2.5 top-2.5 z-10" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-square">
+        <button
+          type="button"
+          onClick={quickAdd}
+          aria-label={`${product.name} 장바구니 담기`}
+          className="pointer-events-auto absolute bottom-2.5 right-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-leaf-700 shadow-soft transition-all duration-200 hover:bg-leaf-600 hover:text-white active:scale-95 focus-ring md:h-10 md:w-10 md:translate-y-1 md:opacity-0 md:focus-visible:translate-y-0 md:focus-visible:opacity-100 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100"
+        >
+          <ShoppingCart className="h-[18px] w-[18px]" />
+        </button>
+      </div>
+    </article>
   );
 }

@@ -8,15 +8,17 @@ import MiraeRibbon from "@/components/mirae/MiraeRibbon";
 import MiraeAILabSampleCTA from "@/components/mirae/MiraeAILabSampleCTA";
 import { FONT_LOADER_SCRIPT, VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
 import Script from "next/script";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "로컬맘 — 우리 동네, 신선한 한 끼",
     template: "%s | 로컬맘",
   },
   description:
     "지역 농가와 소비자를 직접 연결하는 신선식품 커머스. 산지직송 제철 먹거리를 오늘 주문하면 내일 신선하게 도착해요. 미래에이아이랩(MIRAE AI LAB) 제작 레퍼런스 데모입니다.",
-  applicationName: "로컬맘",
+  applicationName: SITE_NAME,
   authors: [{ name: "미래에이아이랩 (MIRAE AI LAB)" }],
   creator: "미래에이아이랩 (MIRAE AI LAB)",
   publisher: "미래에이아이랩 (MIRAE AI LAB)",
@@ -24,10 +26,12 @@ export const metadata: Metadata = {
     title: "로컬맘 — 우리 동네, 신선한 한 끼",
     description:
       "지역 농가와 소비자를 직접 연결하는 신선식품 커머스 · 미래에이아이랩 제작 레퍼런스 데모",
-    siteName: "로컬맘",
+    siteName: SITE_NAME,
     locale: "ko_KR",
     type: "website",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "평창 고랭지 밭에서 갓 수확한 채소를 든 농부" }],
   },
+  twitter: { card: "summary_large_image", images: ["/og.jpg"] },
 };
 
 /**
@@ -58,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <MiraeRibbon />
         <Header />
-        {/* 하단 여백은 Footer(pb-32)가 모바일 하단 내비를 가리지 않게 책임집니다.
+        {/* 하단 여백은 Footer가 모바일 하단 탭·구매 바를 가리지 않게 책임집니다.
             여기서 pb를 주면 아래 CTA 섹션 위에 빈 크림 띠가 생깁니다. */}
         <main id="main" className="flex-1">
           {children}

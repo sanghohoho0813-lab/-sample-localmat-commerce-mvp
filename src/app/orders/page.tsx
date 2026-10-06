@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { CheckCircle2, ChevronRight, PackageSearch } from "lucide-react";
 import OrderProgress from "@/components/OrderProgress";
 import EmptyState from "@/components/EmptyState";
@@ -11,12 +11,13 @@ import { getProduct } from "@/lib/data/products";
 import { formatDate, formatWon, itemLabel } from "@/lib/format";
 import { reviewKey, useAllOrders, useReviewStore, useToastStore } from "@/lib/store";
 import type { OrderStatus, Product } from "@/lib/types";
+import { useHydrated } from "@/lib/useHydrated";
 
 const statusLabels: Record<OrderStatus, { label: string; className: string }> = {
   pending: { label: "주문접수", className: "bg-cream-200 text-bark-600" },
   paid: { label: "주문접수", className: "bg-cream-200 text-bark-600" },
   preparing: { label: "상품준비", className: "bg-leaf-100 text-leaf-700" },
-  shipping: { label: "배송중", className: "bg-tangerine-100 text-tangerine-600" },
+  shipping: { label: "배송중", className: "bg-tangerine-100 text-tangerine-700" },
   delivered: { label: "배송완료", className: "bg-leaf-600 text-white" },
   cancelled: { label: "주문취소", className: "bg-bark-100 text-bark-500" },
 };
@@ -29,8 +30,7 @@ function arrivalLabel(iso: string) {
 }
 
 export default function OrdersPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const orders = useAllOrders();
   const reviews = useReviewStore((s) => s.reviews);

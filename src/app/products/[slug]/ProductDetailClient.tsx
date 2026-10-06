@@ -14,6 +14,8 @@ import { getFarm } from "@/lib/data/farms";
 import { getCategory } from "@/lib/data/categories";
 import { products } from "@/lib/data/products";
 import { getProductReviews } from "@/lib/data/reviews";
+import { useHydrated } from "@/lib/useHydrated";
+import { useTabs } from "@/lib/useTabs";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
 import { expectedDeliveryDate, formatDate, formatPrice, formatWon } from "@/lib/format";
 import {
@@ -38,6 +40,7 @@ const tabs = [
 const LOW_STOCK_THRESHOLD = 30;
 
 type TabId = (typeof tabs)[number]["id"];
+const TAB_IDS = tabs.map((t) => t.id);
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const router = useRouter();
@@ -56,7 +59,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [optionLabel, setOptionLabel] = useState(product.options?.[0]?.label);
   const [quantity, setQuantity] = useState(1);
   const [tab, setTab] = useState<TabId>("intro");
-  const [mounted, setMounted] = useState(false);
   const tabsAnchor = useRef<HTMLDivElement>(null);
 
   const addItem = useCartStore((s) => s.addItem);
@@ -65,8 +67,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const pushRecent = useRecentStore((s) => s.push);
   const myReviews = useReviewStore((s) => s.reviews);
 
+  const mounted = useHydrated();
+
   useEffect(() => {
-    setMounted(true);
     pushRecent(product.id);
   }, [product.id, pushRecent]);
 
@@ -122,6 +125,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       anchor.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
+  const { tabListProps, tabProps, panelProps } = useTabs(TAB_IDS, tab, openTab);
+
 
   return (
     <div className="container-page py-5 md:py-8">
@@ -191,11 +196,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           {/* Price */}
           <div className="mt-5 border-t border-bark-100 pt-5">
             {product.originalPrice && (
-              <p className="text-sm text-bark-300 line-through">{formatWon(product.originalPrice)}</p>
+              <p className="text-sm text-bark-400 line-through">{formatWon(product.originalPrice)}</p>
             )}
             <p className="flex items-baseline gap-2">
               {product.originalPrice && (
-                <span className="text-2xl font-extrabold text-tangerine-500">
+                <span className="text-2xl font-extrabold text-tangerine-600">
                   {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
                 </span>
               )}
@@ -281,17 +286,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       {/* Tabs — 헤더 바로 아래에 붙습니다(모바일 56px, PC 헤더+카테고리 바 113px). */}
       <div ref={tabsAnchor} id="reviews" className="mt-12 scroll-mt-14 md:mt-16 md:scroll-mt-[113px]">
         <div
-          role="tablist"
+          {...tabListProps}
           aria-label="상품 상세"
           className="sticky top-14 z-10 -mx-4 grid grid-cols-5 border-b border-bark-100 bg-cream-100/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 md:top-[113px] lg:mx-0 lg:flex lg:px-0"
         >
           {tabs.map((t) => (
             <button
               key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => openTab(t.id)}
+              {...tabProps(t.id)}
               className={`h-13 min-w-0 whitespace-nowrap border-b-2 text-[16px] font-semibold transition-colors duration-200 lg:px-6 ${
                 tab === t.id
                   ? "border-leaf-700 text-leaf-800"
@@ -300,13 +302,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             >
               {t.label}
               {t.id === "reviews" && (
-                <span className="ml-1 text-tangerine-500">{reviewTotal.toLocaleString()}</span>
+                <span className="ml-1 text-tangerine-600">{reviewTotal.toLocaleString()}</span>
               )}
             </button>
           ))}
         </div>
 
-        <div className="py-8 md:py-10">
+        <div {...panelProps} className="py-8 outline-none md:py-10">
           {tab === "intro" && (
             <div className="max-w-2xl space-y-5">
               {product.description.map((para, i) => (

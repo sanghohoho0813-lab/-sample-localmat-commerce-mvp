@@ -19,7 +19,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const farm = getFarm(slug);
   if (!farm) notFound();
-  return { title: farm.name };
+  const description = `“${farm.quote}” — ${farm.region} ${farm.owner} 농부`;
+  return {
+    title: farm.name,
+    description,
+    alternates: { canonical: `/farms/${farm.slug}` },
+    openGraph: { title: farm.name, description, images: farm.image ? [farm.image] : undefined },
+  };
 }
 
 export default async function FarmDetailPage({

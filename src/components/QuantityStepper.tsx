@@ -18,7 +18,7 @@ export default function QuantityStepper({
   const btn = size === "sm" ? "h-10 w-10" : "h-12 w-12";
   const label = size === "sm" ? "w-9 text-sm" : "w-12 text-base";
   return (
-    <div className="inline-flex items-center rounded-xl border border-bark-200 bg-white">
+    <div role="group" aria-label="수량" className="inline-flex items-center rounded-xl border border-bark-200 bg-white">
       <button
         type="button"
         aria-label="수량 줄이기"
@@ -28,7 +28,11 @@ export default function QuantityStepper({
       >
         <Minus className="h-4 w-4" />
       </button>
-      <span className={`${label} text-center font-bold text-bark-800 tabular-nums`}>{value}</span>
+      {/* 스크린리더가 바뀐 수량을 읽어 줍니다 */}
+      <span aria-live="polite" aria-atomic="true" className={`${label} text-center font-bold text-bark-800 tabular-nums`}>
+        {value}
+        <span className="sr-only">개</span>
+      </span>
       <button
         type="button"
         aria-label="수량 늘리기"

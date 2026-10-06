@@ -1,8 +1,8 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useToastStore, useWishlistStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 
 export default function WishlistButton({
   productId,
@@ -14,8 +14,7 @@ export default function WishlistButton({
   size?: "sm" | "lg";
 }) {
   // Avoid hydration mismatch: persisted store reads only after mount
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const liked = useWishlistStore((s) => s.ids.includes(productId));
   const toggle = useWishlistStore((s) => s.toggle);

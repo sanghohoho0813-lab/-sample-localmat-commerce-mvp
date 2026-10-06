@@ -330,11 +330,17 @@ export default function ProductListClient({
               </button>
             </EmptyState>
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 md:gap-y-8 xl:grid-cols-4">
-              {filtered.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <section aria-labelledby="product-list-heading">
+              {/* 화면에는 '총 N개'가 이미 보이므로 스크린리더용 제목만 둡니다(제목 단계 h1→h2→h3 유지). */}
+              <h2 id="product-list-heading" className="sr-only">
+                상품 {filtered.length}개
+              </h2>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 md:gap-y-8 xl:grid-cols-4">
+                {filtered.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
           )}
         </div>
       </div>

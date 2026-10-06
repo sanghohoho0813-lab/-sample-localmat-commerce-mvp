@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use } from "react";
 import { CheckCircle2, MapPin, Truck } from "lucide-react";
 import OrderProgress from "@/components/OrderProgress";
 import PriceSummary from "@/components/PriceSummary";
@@ -9,6 +9,7 @@ import ProductImage from "@/components/ProductImage";
 import { getProduct } from "@/lib/data/products";
 import { formatDate, formatWon, itemLabel } from "@/lib/format";
 import { isFreshOrder, useAllOrders } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -19,8 +20,7 @@ function deliveryLabel(iso: string) {
 
 export default function OrderCompletePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const orders = useAllOrders();
   const order = orders.find((o) => o.id === id);

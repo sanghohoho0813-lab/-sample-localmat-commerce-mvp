@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ShoppingCart, Trash2, Truck } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FreeShippingBar from "@/components/FreeShippingBar";
@@ -9,15 +9,15 @@ import PriceSummary from "@/components/PriceSummary";
 import ProductCard from "@/components/ProductCard";
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/data/etc";
 import { getProduct, products } from "@/lib/data/products";
 import { expectedDeliveryDate, formatWon, itemLabel } from "@/lib/format";
-import { cartItemUnitPrice, maxQuantityFor, useCartStore, useToastStore } from "@/lib/store";
+import { summarize, unitPrice as unitPriceOf } from "@/lib/pricing";
+import { maxQuantityFor, useCartStore, useToastStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 
 export default function CartPage() {
-  // persist rehydration guard (SSR renders empty cart)
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const hydrated = useHydrated();
 
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
@@ -25,13 +25,8 @@ export default function CartPage() {
   const restoreItem = useCartStore((s) => s.restoreItem);
   const showToast = useToastStore((s) => s.show);
 
-  const visibleItems = mounted ? items : [];
-  const itemsTotal = visibleItems.reduce(
-    (sum, i) => sum + cartItemUnitPrice(i) * i.quantity,
-    0
-  );
-  const shippingFee = itemsTotal === 0 || itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
-  const total = itemsTotal + shippingFee;
+  const visibleItems = useMemo(() => (hydrated ? items : []), [hydrated, items]);
+  const { itemsTotal, shippingFee, total } = summarize(visibleItems);
   const delivery = expectedDeliveryDate(1);
 
   // 함께 담으면 좋은 상품: 담긴 상품과 같은 산지를 우선하고, 모자라면 인기순으로 채웁니다.
@@ -49,7 +44,7 @@ export default function CartPage() {
   }, [visibleItems]);
 
   // 저장된 장바구니를 읽기 전에는 '0원 주문하기' 같은 빈 화면이 번쩍이지 않게 자리만 잡아 둡니다.
-  if (!mounted) {
+  if (!hydrated) {
     return (
       <div className="container-page py-6 md:py-8" aria-busy="true">
         <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">장바구니</h1>
@@ -88,7 +83,7 @@ export default function CartPage() {
             {visibleItems.map((item, index) => {
               const product = getProduct(item.productId);
               if (!product) return null;
-              const unitPrice = cartItemUnitPrice(item);
+              const unitPrice = unitPriceOf(item);
               return (
                 <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-3.5 py-4 md:gap-4 md:py-5">
                   <Link href={`/products/${product.slug}`} className="shrink-0">
@@ -123,7 +118,7 @@ export default function CartPage() {
                             onClick: () => restoreItem(item, index),
                           });
                         }}
-                        className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bark-300 transition-colors hover:bg-cream-100 hover:text-bark-500 focus-ring"
+                        className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bark-400 transition-colors hover:bg-cream-100 hover:text-bark-500 focus-ring"
                       >
                         <Trash2 className="h-[18px] w-[18px]" />
                       </button>

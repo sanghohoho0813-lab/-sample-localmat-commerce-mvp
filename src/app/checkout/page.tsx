@@ -1,22 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Banknote, Check, CreditCard, Loader2, MapPin, Smartphone, Ticket } from "lucide-react";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
-import {
-  FREE_SHIPPING_THRESHOLD,
-  SHIPPING_FEE,
-  addresses,
-  couponDiscountFor,
-  coupons,
-  demoUser,
-} from "@/lib/data/etc";
+import { addresses, demoUser } from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
 import { expectedDeliveryDate, formatWon, itemLabel, makeOrderNumber } from "@/lib/format";
-import { cartItemUnitPrice, useBuyNowStore, useCartStore, useOrderStore } from "@/lib/store";
+import { couponOptions, summarize, unitPrice } from "@/lib/pricing";
+import { useBuyNowStore, useCartStore, useOrderStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 import type { CartItem, Order, PaymentMethod } from "@/lib/types";
 
 // 라벨을 네 글자로 맞춰 좁은 폰에서도 세 칸이 한 줄에 들어갑니다.
@@ -30,15 +25,29 @@ const CUSTOM_REQUEST = "직접 입력";
 const REQUEST_MAX = 50;
 const requestOptions = ["문 앞에 놓아주세요", "경비실에 맡겨주세요", "배송 전 연락주세요", CUSTOM_REQUEST];
 
+/** useSearchParams를 쓰는 화면은 정적 생성 시 Suspense 경계가 필요합니다. */
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutSkeleton />}>
+      <Checkout />
+    </Suspense>
+  );
+}
+
+function CheckoutSkeleton() {
+  return (
+    <div className="container-page py-6 md:py-8" aria-busy="true">
+      <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">주문서</h1>
+      <div className="h-64 animate-pulse rounded-card bg-white/70" />
+    </div>
+  );
+}
+
+function Checkout() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
   /** 상품 상세의 '바로 구매'로 들어온 주문서 — 장바구니가 아니라 그 상품 하나만 주문합니다. */
-  const [buyNowMode, setBuyNowMode] = useState(false);
-  useEffect(() => {
-    setBuyNowMode(new URLSearchParams(window.location.search).get("mode") === "now");
-    setMounted(true);
-  }, []);
+  const buyNowMode = useSearchParams().get("mode") === "now";
 
   const cartItems = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clear);
@@ -60,41 +69,26 @@ export default function CheckoutPage() {
   /** 결제 버튼을 누른 순간의 주문 상품 — 장바구니를 비운 뒤 화면이 0원으로 바뀌지 않게 고정합니다. */
   const [placedItems, setPlacedItems] = useState<CartItem[] | null>(null);
 
-  const visibleItems = placedItems ?? (mounted ? items : []);
-  const itemsTotal = visibleItems.reduce((sum, i) => sum + cartItemUnitPrice(i) * i.quantity, 0);
-  const shippingFee = itemsTotal === 0 || itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const visibleItems = placedItems ?? (hydrated ? items : []);
+  const baseTotal = summarize(visibleItems).itemsTotal;
+  const {
+    usable: usableCoupons,
+    unusableCount,
+    nextGap: nextCouponGap,
+  } = useMemo(() => couponOptions(baseTotal), [baseTotal]);
 
-  const { usableCoupons, unusableCount, bestCouponId, nextCouponGap } = useMemo(() => {
-    const usable = coupons
-      .map((c) => ({ coupon: c, discount: couponDiscountFor(c, itemsTotal) }))
-      .filter((c) => c.discount > 0)
-      .sort((a, b) => b.discount - a.discount);
-    return {
-      usableCoupons: usable,
-      unusableCount: coupons.length - usable.length,
-      bestCouponId: usable[0]?.coupon.id ?? "",
-      // 아직 못 쓰는 쿠폰 중 가장 가까운 조건까지 남은 금액
-      nextCouponGap: Math.min(
-        ...coupons.filter((c) => itemsTotal < c.minOrder).map((c) => c.minOrder - itemsTotal),
-        Infinity
-      ),
-    };
-  }, [itemsTotal]);
-
-  const couponId = pickedCouponId ?? bestCouponId;
-  const couponDiscount = usableCoupons.find((c) => c.coupon.id === couponId)?.discount ?? 0;
-
-  const total = itemsTotal + shippingFee - couponDiscount;
+  const couponId = pickedCouponId ?? usableCoupons[0]?.coupon.id ?? "";
+  const { itemsTotal, shippingFee, couponDiscount, total } = summarize(visibleItems, couponId || null);
   const delivery = expectedDeliveryDate(1);
   const address = addresses.find((a) => a.id === addressId)!;
   const isCustomRequest = requestChoice === CUSTOM_REQUEST;
 
   // 주문할 상품이 없으면(새 탭에서 주문서 주소만 연 경우 등) 장바구니로 보냅니다.
   useEffect(() => {
-    if (mounted && items.length === 0 && !placing) {
+    if (hydrated && items.length === 0 && !placing) {
       router.replace("/cart");
     }
-  }, [mounted, items.length, placing, router]);
+  }, [hydrated, items.length, placing, router]);
 
   function placeOrder() {
     if (placing || visibleItems.length === 0) return;
@@ -124,7 +118,7 @@ export default function CheckoutPage() {
           unit: p.unit,
           optionLabel: i.optionLabel,
           quantity: i.quantity,
-          price: cartItemUnitPrice(i),
+          price: unitPrice(i),
         };
       }),
       itemsTotal,
@@ -159,14 +153,7 @@ export default function CheckoutPage() {
   );
 
   // 저장된 장바구니를 읽기 전(또는 비어 있어 장바구니로 보내는 중)에는 0원 주문서가 번쩍이지 않게 자리만 잡습니다.
-  if (!mounted || visibleItems.length === 0) {
-    return (
-      <div className="container-page py-6 md:py-8" aria-busy="true">
-        <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">주문서</h1>
-        <div className="h-64 animate-pulse rounded-card bg-white/70" />
-      </div>
-    );
-  }
+  if (!hydrated || visibleItems.length === 0) return <CheckoutSkeleton />;
 
   return (
     <div className="container-page py-6 md:py-8">
@@ -335,7 +322,7 @@ export default function CheckoutPage() {
                           {item.quantity}개
                         </p>
                         <p className="shrink-0 text-sm font-bold text-bark-900">
-                          {formatWon(cartItemUnitPrice(item) * item.quantity)}
+                          {formatWon(unitPrice(item) * item.quantity)}
                         </p>
                       </div>
                     </div>
@@ -358,7 +345,7 @@ export default function CheckoutPage() {
               // 쓸 수 있는 쿠폰이 없으면 고를 것도 없으니, 얼마를 더 담으면 쓸 수 있는지만 알려 줍니다.
               <p className="mt-2.5 text-[16px] text-bark-600">
                 지금 쓸 수 있는 쿠폰이 없어요.
-                {Number.isFinite(nextCouponGap) && (
+                {nextCouponGap !== null && (
                   <>
                     {" "}
                     <b className="font-bold text-tangerine-600">{formatWon(nextCouponGap)}</b> 더 담으면 쿠폰을 쓸 수

@@ -34,16 +34,6 @@ export const coupons: Coupon[] = [
   },
 ];
 
-/** 이 주문 금액에서 쿠폰으로 깎이는 금액 — 조건이 안 맞으면 0 */
-export function couponDiscountFor(coupon: Coupon, itemsTotal: number): number {
-  if (itemsTotal < coupon.minOrder) return 0;
-  if (coupon.discountType === "percent") {
-    const raw = Math.floor((itemsTotal * coupon.value) / 100);
-    return coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw;
-  }
-  return coupon.value;
-}
-
 export const addresses: Address[] = [
   {
     id: "a01",

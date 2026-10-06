@@ -63,7 +63,7 @@ select:focus-visible,
     @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-tangerine-500 font-semibold text-white transition-colors duration-200 hover:bg-tangerine-600 active:bg-tangerine-700 disabled:cursor-not-allowed disabled:bg-bark-300;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-tangerine-600 font-semibold text-white transition-colors duration-200 hover:bg-tangerine-700 active:bg-tangerine-800 disabled:cursor-not-allowed disabled:bg-bark-300;
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf-600 font-semibold text-white transition-colors duration-200 hover:bg-leaf-700 active:bg-leaf-800;

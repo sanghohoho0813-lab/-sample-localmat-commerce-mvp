@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronRight, Clock, Heart, MapPin, Package, Ticket, User } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import ProductCard from "@/components/ProductCard";
@@ -9,6 +9,8 @@ import { addresses, coupons, demoUser } from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
 import { formatWon } from "@/lib/format";
 import { useAllOrders, useRecentStore, useWishlistStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
+import { useTabs } from "@/lib/useTabs";
 
 const tabs = [
   { id: "wishlist", label: "찜" },
@@ -18,10 +20,10 @@ const tabs = [
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
+const TAB_IDS = tabs.map((t) => t.id);
 
 export default function MyPageClient({ initialTab }: { initialTab: string }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const validTab = tabs.find((t) => t.id === initialTab)?.id ?? "wishlist";
   const [tab, setTabState] = useState<TabId>(validTab);
@@ -31,6 +33,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
     setTabState(next);
     window.history.replaceState(null, "", `/mypage?tab=${next}`);
   }
+  const { tabListProps, tabProps, panelProps } = useTabs(TAB_IDS, tab, setTab);
 
   const wishlistIds = useWishlistStore((s) => s.ids);
   const recentIds = useRecentStore((s) => s.ids);
@@ -92,14 +95,11 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 grid grid-cols-4 border-b border-bark-100 sm:flex" role="tablist" aria-label="마이페이지">
+      <div {...tabListProps} className="mt-6 grid grid-cols-4 border-b border-bark-100 sm:flex" aria-label="마이페이지">
         {tabs.map((t) => (
           <button
             key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
+            {...tabProps(t.id)}
             className={`h-12 min-w-0 whitespace-nowrap border-b-2 text-[16px] font-semibold transition-colors duration-200 sm:px-6 ${
               tab === t.id
                 ? "border-leaf-700 text-leaf-800"
@@ -112,7 +112,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
         ))}
       </div>
 
-      <div className="py-6">
+      <div {...panelProps} className="py-6 outline-none">
         {/* 저장된 찜·최근 본 목록을 읽기 전에 '비어 있어요'가 번쩍이지 않도록 */}
         {!mounted && (tab === "wishlist" || tab === "recent") && (
           <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4" aria-busy="true">

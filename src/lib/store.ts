@@ -3,22 +3,32 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { CartItem, Order, Review } from "@/lib/types";
-import { getProduct } from "@/lib/data/products";
 import { demoUser, seedOrders } from "@/lib/data/etc";
+import { withLiveDates } from "@/lib/orders";
+import {
+  cartKey,
+  maxQuantityFor,
+  sanitizeCartItems,
+  sanitizeOrders,
+  sanitizeProductIds,
+  sanitizeReviews,
+} from "@/lib/persisted";
+
+export { maxQuantityFor };
+
+/**
+ * 저장 형식 버전 — 형식을 바꾸면 올리고 migrate를 추가합니다.
+ * 읽어 온 값은 항상 merge 단계에서 검증한 뒤에만 상태로 올립니다(src/lib/persisted.ts).
+ */
+const STORAGE_VERSION = 1;
+
+/**
+ * 버전이 다른(이전 앱이 남긴) 저장값도 버리지 않고 그대로 넘깁니다 — 검증·정리는 각 store의 merge가 합니다.
+ * migrate가 없으면 zustand는 버전이 다른 저장값을 통째로 버려서, 업데이트 직후 장바구니가 비어 버립니다.
+ */
+const keepPersisted = (persisted: unknown) => persisted as never;
 
 // ── Cart ────────────────────────────────────────────────
-
-const HARD_MAX = 99;
-
-function cartKey(productId: string, optionLabel?: string) {
-  return `${productId}__${optionLabel ?? ""}`;
-}
-
-/** 한 상품을 장바구니에 담을 수 있는 최대 수량 — 재고를 넘지 않습니다. */
-export function maxQuantityFor(productId: string): number {
-  const stock = getProduct(productId)?.stock ?? HARD_MAX;
-  return Math.max(1, Math.min(stock, HARD_MAX));
-}
 
 export interface AddResult {
   /** 담긴 뒤 장바구니에 있는 이 상품(옵션)의 수량 */
@@ -81,7 +91,15 @@ export const useCartStore = create<CartState>()(
         }),
       clear: () => set({ items: [] }),
     }),
-    { name: "localmat-cart" }
+    {
+      name: "localmat-cart",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        items: sanitizeCartItems((persisted as Partial<CartState> | undefined)?.items),
+      }),
+    }
   )
 );
 
@@ -100,16 +118,18 @@ export const useBuyNowStore = create<BuyNowState>()(
       item: null,
       set: (item) => set({ item }),
     }),
-    { name: "localmat-buynow", storage: createJSONStorage(() => sessionStorage) }
+    {
+      name: "localmat-buynow",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      storage: createJSONStorage(() => sessionStorage),
+      merge: (persisted, current) => ({
+        ...current,
+        item: sanitizeCartItems([(persisted as Partial<BuyNowState> | undefined)?.item])[0] ?? null,
+      }),
+    }
   )
 );
-
-export function cartItemUnitPrice(item: CartItem): number {
-  const product = getProduct(item.productId);
-  if (!product) return 0;
-  const extra = product.options?.find((o) => o.label === item.optionLabel)?.extraPrice ?? 0;
-  return product.price + extra;
-}
 
 export function useCartCount(): number {
   return useCartStore((s) => s.items.reduce((sum, i) => sum + i.quantity, 0));
@@ -133,7 +153,15 @@ export const useWishlistStore = create<WishlistState>()(
             : [productId, ...state.ids],
         })),
     }),
-    { name: "localmat-wishlist" }
+    {
+      name: "localmat-wishlist",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        ids: sanitizeProductIds((persisted as Partial<WishlistState> | undefined)?.ids),
+      }),
+    }
   )
 );
 
@@ -150,43 +178,28 @@ export const useOrderStore = create<OrderState>()(
       orders: [],
       addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
     }),
-    { name: "localmat-orders" }
+    {
+      name: "localmat-orders",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        orders: sanitizeOrders((persisted as Partial<OrderState> | undefined)?.orders),
+      }),
+    }
   )
 );
 
-/**
- * 진행 중인 샘플 주문은 날짜를 오늘 기준(어제 주문 · 내일 도착)으로 맞춥니다.
- * 고정 날짜로 두면 몇 주 전 주문이 아직 '배송중'으로 보여 고장 난 것처럼 보입니다.
- * (이 훅을 쓰는 화면은 모두 마운트 후에만 그리므로 서버/클라이언트 날짜 차이가 없습니다.)
- */
-function withLiveDates(order: Order): Order {
-  if (order.status === "delivered" || order.status === "cancelled") return order;
-  const created = new Date(order.createdAt);
-  const now = new Date();
-  created.setFullYear(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  const arrive = new Date(now);
-  arrive.setDate(now.getDate() + 1);
-  const ymd = (d: Date) =>
-    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  return {
-    ...order,
-    createdAt: created.toISOString(),
-    orderNumber: `LM${ymd(created)}-${order.orderNumber.split("-").pop()}`,
-    expectedDelivery: `${arrive.getFullYear()}-${ymd(arrive).slice(4, 6)}-${ymd(arrive).slice(6)}`,
-  };
-}
-
 export function useAllOrders(): Order[] {
   const created = useOrderStore((s) => s.orders);
-  return [...created, ...seedOrders.map(withLiveDates)];
+  return [...created, ...seedOrders.map((order) => withLiveDates(order))];
 }
 
-/** 방금 결제한 주문인지 — 주문 완료 화면의 축하 문구는 이때만 보여 줍니다. */
-export function isFreshOrder(order: Order): boolean {
-  return !order.id.startsWith("seed-") && Date.now() - new Date(order.createdAt).getTime() < 30 * 60 * 1000;
-}
+export { isFreshOrder } from "@/lib/orders";
 
 // ── Recently viewed ─────────────────────────────────────
+
+const RECENT_LIMIT = 12;
 
 interface RecentState {
   ids: string[];
@@ -199,10 +212,18 @@ export const useRecentStore = create<RecentState>()(
       ids: [],
       push: (productId) =>
         set((state) => ({
-          ids: [productId, ...state.ids.filter((id) => id !== productId)].slice(0, 12),
+          ids: [productId, ...state.ids.filter((id) => id !== productId)].slice(0, RECENT_LIMIT),
         })),
     }),
-    { name: "localmat-recent" }
+    {
+      name: "localmat-recent",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        ids: sanitizeProductIds((persisted as Partial<RecentState> | undefined)?.ids, RECENT_LIMIT),
+      }),
+    }
   )
 );
 
@@ -243,7 +264,15 @@ export const useReviewStore = create<ReviewState>()(
           ],
         })),
     }),
-    { name: "localmat-reviews" }
+    {
+      name: "localmat-reviews",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        reviews: sanitizeReviews<MyReview>((persisted as Partial<ReviewState> | undefined)?.reviews),
+      }),
+    }
   )
 );
 
@@ -293,3 +322,15 @@ export const useToastStore = create<ToastState>()((set) => ({
   },
   dismiss: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 }));
+
+// ── 탭 간 동기화 ────────────────────────────────────────
+// 다른 탭에서 장바구니·찜·주문이 바뀌면(storage 이벤트) 이 탭도 저장값을 다시 읽어
+// 헤더 배지와 목록이 서로 어긋나지 않게 합니다.
+if (typeof window !== "undefined") {
+  const synced = [useCartStore, useWishlistStore, useOrderStore, useRecentStore, useReviewStore];
+  window.addEventListener("storage", (event) => {
+    for (const store of synced) {
+      if (event.key === store.persist.getOptions().name) void store.persist.rehydrate();
+    }
+  });
+}

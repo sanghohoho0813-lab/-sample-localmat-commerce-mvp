@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import { useTabs } from "@/lib/useTabs";
 import { products } from "@/lib/data/products";
 
 const tabs = [
@@ -28,6 +29,7 @@ const tabs = [
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
+const TAB_IDS = tabs.map((t) => t.id);
 
 /**
  * 홈의 상품 진열 — '추천'과 '제철'을 따로 늘어놓으면 같은 상품이 두 번 나와서
@@ -36,6 +38,7 @@ type TabId = (typeof tabs)[number]["id"];
 export default function HomeProductTabs() {
   const [tabId, setTabId] = useState<TabId>("best");
   const tab = tabs.find((t) => t.id === tabId) ?? tabs[0];
+  const { tabListProps, tabProps, panelProps } = useTabs(TAB_IDS, tabId, setTabId);
 
   return (
     <section className="container-page" aria-labelledby="home-products-title">
@@ -52,16 +55,13 @@ export default function HomeProductTabs() {
         </Link>
       </div>
 
-      <div role="tablist" aria-label="상품 묶음" className="mb-5 flex gap-2">
+      <div {...tabListProps} aria-label="상품 묶음" className="mb-5 flex gap-2">
         {tabs.map((t) => {
           const active = t.id === tabId;
           return (
             <button
               key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTabId(t.id)}
+              {...tabProps(t.id)}
               className={`h-11 rounded-pill border px-5 text-[16px] font-semibold transition-colors duration-200 focus-ring ${
                 active
                   ? "border-leaf-700 bg-leaf-700 text-white"
@@ -75,8 +75,7 @@ export default function HomeProductTabs() {
       </div>
 
       <div
-        role="tabpanel"
-        aria-label={tab.label}
+        {...panelProps}
         className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-5 md:gap-y-8 lg:grid-cols-4"
       >
         {tab.list.map((p, i) => (

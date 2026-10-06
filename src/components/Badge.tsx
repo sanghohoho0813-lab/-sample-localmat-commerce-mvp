@@ -1,7 +1,7 @@
 import type { ProductBadge } from "@/lib/types";
 
 const styles: Record<ProductBadge, string> = {
-  제철: "bg-tangerine-500 text-white",
+  제철: "bg-tangerine-600 text-white",
   산지직송: "bg-leaf-600 text-white",
   당일수확: "bg-leaf-100 text-leaf-700",
   무농약: "bg-leaf-100 text-leaf-700",
@@ -9,7 +9,7 @@ const styles: Record<ProductBadge, string> = {
   동물복지: "bg-cream-200 text-bark-600",
   무항생제: "bg-cream-200 text-bark-600",
   "1등급": "bg-cream-200 text-bark-600",
-  NEW: "bg-tangerine-100 text-tangerine-600",
+  NEW: "bg-tangerine-100 text-tangerine-700",
   베스트: "bg-bark-800 text-white",
 };
 
