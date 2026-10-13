@@ -9,6 +9,8 @@ import ProductCard from "@/components/ProductCard";
 import { categories, getCategory } from "@/lib/data/categories";
 import { products } from "@/lib/data/products";
 import type { Product } from "@/lib/types";
+import { availableFirst } from "@/lib/catalog";
+import { isAvailable, isInSeason } from "@/lib/season";
 
 const sortOptions = [
   { value: "recommend", label: "추천순" },
@@ -96,10 +98,12 @@ export default function ProductListClient({
   initialCategory,
   seasonalOnly,
   initialSort,
+  month,
 }: {
   initialCategory: string;
   seasonalOnly: boolean;
   initialSort: string;
+  month: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -153,7 +157,7 @@ export default function ProductListClient({
   const filtered = useMemo(() => {
     let list = products;
     if (category) list = list.filter((p) => p.categoryId === category.id);
-    if (seasonalOnly) list = list.filter((p) => p.isSeasonal);
+    if (seasonalOnly) list = list.filter((p) => isInSeason(p, month) && isAvailable(p));
     if (selectedPrices.length > 0) {
       list = list.filter((p) =>
         selectedPrices.some((v) => priceRanges.find((r) => r.value === v)?.test(p.price))
@@ -162,8 +166,9 @@ export default function ProductListClient({
     if (selectedRegions.length > 0) {
       list = list.filter((p) => selectedRegions.includes(p.region.split(" ")[0]));
     }
-    return sortProducts(list, sort);
-  }, [category, seasonalOnly, selectedPrices, selectedRegions, sort]);
+    // 시즌 준비 중·품절 상품은 정렬과 관계없이 맨 뒤로
+    return availableFirst(sortProducts(list, sort));
+  }, [category, seasonalOnly, selectedPrices, selectedRegions, sort, month]);
 
   function toggle(list: string[], value: string, setter: (v: string[]) => void) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -175,7 +180,7 @@ export default function ProductListClient({
   }
 
   const activeFilterCount = selectedPrices.length + selectedRegions.length;
-  const title = seasonalOnly ? "제철 먹거리" : category ? category.name : "전체 상품";
+  const title = seasonalOnly ? `${month}월 제철` : category ? category.name : "전체 상품";
 
   const renderFilterPanel = (withCategory: boolean) => (
     <div className="space-y-6">

@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { CheckCircle2, ChevronRight, PackageSearch } from "lucide-react";
+import { CheckCircle2, ChevronRight, PackageSearch, RotateCcw } from "lucide-react";
 import OrderProgress from "@/components/OrderProgress";
 import EmptyState from "@/components/EmptyState";
 import ProductImage from "@/components/ProductImage";
 import ReviewModal from "@/components/ReviewModal";
 import { getProduct } from "@/lib/data/products";
 import { formatDate, formatWon, itemLabel } from "@/lib/format";
+import { parseIsoDate, shortDay } from "@/lib/kst";
 import { reviewKey, useAllOrders, useReviewStore, useToastStore } from "@/lib/store";
 import type { OrderStatus, Product } from "@/lib/types";
 import { useHydrated } from "@/lib/useHydrated";
+import { getFarm } from "@/lib/data/farms";
+import { useReorder } from "@/lib/useReorder";
+
+const farmOf = (p: Product) => getFarm(p.farmId);
 
 const statusLabels: Record<OrderStatus, { label: string; className: string }> = {
   pending: { label: "주문접수", className: "bg-cream-200 text-bark-600" },
@@ -22,12 +27,7 @@ const statusLabels: Record<OrderStatus, { label: string; className: string }> = 
   cancelled: { label: "주문취소", className: "bg-bark-100 text-bark-500" },
 };
 
-const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
-
-function arrivalLabel(iso: string) {
-  const d = new Date(`${iso}T00:00:00`);
-  return `${d.getMonth() + 1}/${d.getDate()}(${DAY_NAMES[d.getDay()]})`;
-}
+const dayOf = (iso: string) => shortDay(parseIsoDate(iso));
 
 export default function OrdersPage() {
   const mounted = useHydrated();
@@ -40,6 +40,7 @@ export default function OrdersPage() {
 
   const reviewed = new Set(reviews.map((r) => reviewKey(r.orderId, r.productId)));
   const closeReview = useCallback(() => setReviewTarget(null), []);
+  const reorder = useReorder();
 
   return (
     <div className="container-page max-w-3xl py-6 md:py-8">
@@ -49,8 +50,8 @@ export default function OrdersPage() {
 
       {!mounted ? (
         <div className="space-y-4" aria-busy="true">
-          <div className="h-56 animate-pulse rounded-card bg-white/70" />
-          <div className="h-40 animate-pulse rounded-card bg-white/70" />
+          <div className="h-56 animate-pulse rounded-2xl bg-white/70" />
+          <div className="h-40 animate-pulse rounded-2xl bg-white/70" />
         </div>
       ) : orders.length === 0 ? (
         <EmptyState
@@ -64,8 +65,8 @@ export default function OrdersPage() {
             const status = statusLabels[order.status];
             const inProgress = order.status !== "delivered" && order.status !== "cancelled";
             return (
-              <section key={order.id} className="overflow-hidden rounded-card border border-bark-100 bg-white">
-                <header className="flex items-center justify-between gap-2 border-b border-bark-100 bg-cream-50 py-1.5 pl-5 pr-2">
+              <section key={order.id} className="overflow-hidden rounded-2xl bg-white">
+                <header className="flex items-center justify-between gap-2 border-b border-bark-100 py-1.5 pl-5 pr-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
                     <span className={`rounded-md px-2 py-0.5 text-sm font-bold ${status.className}`}>
                       {status.label}
@@ -84,8 +85,11 @@ export default function OrdersPage() {
                 {/* 진행 중인 주문만 단계 표시 — 끝난 주문은 상태 배지로 충분합니다. */}
                 {inProgress && (
                   <div className="border-b border-bark-100 px-5 pb-5 pt-4">
-                    <p className="mb-4 text-[16px] font-bold text-leaf-700">
-                      {arrivalLabel(order.expectedDelivery)} 도착 예정
+                    <p className="mb-4 flex flex-wrap items-baseline gap-x-2 text-[16px] font-bold text-leaf-700">
+                      {dayOf(order.expectedDelivery)} 도착 예정
+                      {order.shipDate && order.status !== "shipping" && (
+                        <span className="text-sm font-medium text-bark-500">{dayOf(order.shipDate)} 산지 출고</span>
+                      )}
                     </p>
                     <OrderProgress status={order.status} />
                   </div>
@@ -108,13 +112,21 @@ export default function OrdersPage() {
                           </Link>
                         ) : null}
                         <div className="min-w-0 flex-1">
+                          {product && farmOf(product) && (
+                            <Link
+                              href={`/farms/${farmOf(product)!.slug}`}
+                              className="block truncate text-xs text-bark-500 hover:text-leaf-700"
+                            >
+                              {farmOf(product)!.name}
+                            </Link>
+                          )}
                           <p className="line-clamp-2 text-sm font-semibold leading-snug text-bark-800">
                             {itemLabel(item.name, item.unit, item.optionLabel).title}
                           </p>
-                          <p className="mt-0.5 truncate text-sm text-bark-400">
-                            {itemLabel(item.name, item.unit, item.optionLabel).option
-                              ? `${item.optionLabel} · `
-                              : ""}
+                          {itemLabel(item.name, item.unit, item.optionLabel).option && (
+                            <p className="mt-0.5 truncate text-sm text-bark-500">{item.optionLabel}</p>
+                          )}
+                          <p className="mt-0.5 text-sm text-bark-500">
                             {item.quantity}개 · {formatWon(item.price * item.quantity)}
                           </p>
                         </div>
@@ -139,9 +151,19 @@ export default function OrdersPage() {
                   })}
                 </ul>
 
-                <footer className="flex items-center justify-between border-t border-bark-100 px-5 py-3.5 text-[16px]">
-                  <span className="text-bark-500">결제 금액</span>
-                  <span className="font-extrabold text-bark-900">{formatWon(order.totalAmount)}</span>
+                <footer className="flex items-center justify-between gap-3 border-t border-bark-100 py-2.5 pl-5 pr-3">
+                  <p className="text-[16px]">
+                    <span className="text-bark-500">결제 금액</span>{" "}
+                    <span className="font-extrabold text-bark-900">{formatWon(order.totalAmount)}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => reorder(order.items)}
+                    className="btn-outline h-11 shrink-0 gap-1.5 px-3.5 text-sm font-semibold"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    다시 담기
+                  </button>
                 </footer>
               </section>
             );

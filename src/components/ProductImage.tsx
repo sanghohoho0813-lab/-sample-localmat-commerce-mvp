@@ -55,7 +55,10 @@ export default function ProductImage({
         }`}
         aria-hidden
       >
-        <span className={`${iconSize} opacity-40 select-none`}>{category?.emoji ?? "🌿"}</span>
+        {/* 로딩 중엔 은은한 바탕색만 — 아이콘은 사진이 정말 없을 때만 대신 보여 줍니다. */}
+        {(!product.image || failed) && (
+          <span className={`${iconSize} opacity-40 select-none`}>{category?.emoji ?? "🌿"}</span>
+        )}
       </div>
 
       {product.image && !failed && (

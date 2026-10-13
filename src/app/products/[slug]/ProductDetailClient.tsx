@@ -2,22 +2,24 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Clock, MapPin, ShoppingCart, Star, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Box, CalendarClock, ChevronRight, MapPin, Refrigerator, ShoppingCart, Sprout, Star, Truck } from "lucide-react";
 import Badge from "@/components/Badge";
+import { EtaLine } from "@/components/DeliveryEta";
+import FarmImage from "@/components/FarmImage";
 import ProductCard from "@/components/ProductCard";
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
-import RatingStars from "@/components/RatingStars";
 import WishlistButton from "@/components/WishlistButton";
-import { getFarm } from "@/lib/data/farms";
 import { getCategory } from "@/lib/data/categories";
-import { products } from "@/lib/data/products";
-import { getProductReviews } from "@/lib/data/reviews";
-import { useHydrated } from "@/lib/useHydrated";
-import { useTabs } from "@/lib/useTabs";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/data/etc";
-import { expectedDeliveryDate, formatDate, formatPrice, formatWon } from "@/lib/format";
+import { getFarm } from "@/lib/data/farms";
+import { getProduct, products } from "@/lib/data/products";
+import { getProductReviews } from "@/lib/data/reviews";
+import { shippingPolicy } from "@/lib/delivery";
+import { formatDate, formatPrice, formatWon } from "@/lib/format";
+import { recommendFor } from "@/lib/recommend";
+import { isAvailable, isInSeason, seasonLabel } from "@/lib/season";
 import {
   maxQuantityFor,
   useBuyNowStore,
@@ -27,79 +29,81 @@ import {
   useToastStore,
 } from "@/lib/store";
 import type { Product } from "@/lib/types";
-
-// 짧은 두 글자 라벨 — 좁은 폰에서도 다섯 탭이 가로 스크롤 없이 한 줄에 들어갑니다.
-const tabs = [
-  { id: "intro", label: "소개" },
-  { id: "farm", label: "농가" },
-  { id: "info", label: "정보" },
-  { id: "shipping", label: "배송" },
-  { id: "reviews", label: "리뷰" },
-] as const;
+import { useHydrated } from "@/lib/useHydrated";
+import { useScrollSpy } from "@/lib/useScrollSpy";
 
 const LOW_STOCK_THRESHOLD = 30;
 
-type TabId = (typeof tabs)[number]["id"];
-const TAB_IDS = tabs.map((t) => t.id);
+const SECTIONS = [
+  { id: "info", label: "상품정보" },
+  { id: "producer", label: "생산자" },
+  { id: "shipping", label: "배송" },
+  { id: "reviews", label: "후기" },
+] as const;
+const SECTION_IDS = SECTIONS.map((s) => s.id);
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+/**
+ * 신선식품 상세 — 사는 사람이 실제로 묻는 순서대로:
+ * 누가 키웠나 → 얼마인가 → 언제 수확해 어떻게 포장되고 언제 오나 → 실제 양·옵션 차이 → 농가 → 배송 규칙 → 후기.
+ * 아래 내용은 탭에 숨기지 않고 한 페이지에 이어 두고, 구역 바로가기로 오갑니다.
+ */
+export default function ProductDetailClient({ product, month }: { product: Product; month: number }) {
   const router = useRouter();
   const farm = getFarm(product.farmId);
   const category = getCategory(product.categoryId);
   const maxQuantity = maxQuantityFor(product.id);
-  // 같은 카테고리가 4개가 안 되면 인기 상품으로 채워 진열 줄이 비지 않게 합니다.
-  const related = useMemo(() => {
-    const same = products.filter((p) => p.categoryId === product.categoryId && p.id !== product.id);
-    const others = products
-      .filter((p) => p.categoryId !== product.categoryId)
-      .sort((a, b) => b.salesCount - a.salesCount);
-    return [...same, ...others].slice(0, 4);
-  }, [product]);
+  const soldOut = !isAvailable(product);
+  const inSeason = isInSeason(product, month);
+
+  const recommendations = useMemo(() => recommendFor(product, month), [product, month]);
+  const farmProducts = useMemo(
+    () => products.filter((p) => p.farmId === product.farmId && p.id !== product.id && isAvailable(p)).slice(0, 3),
+    [product]
+  );
 
   const [optionLabel, setOptionLabel] = useState(product.options?.[0]?.label);
   const [quantity, setQuantity] = useState(1);
-  const [tab, setTab] = useState<TabId>("intro");
-  const tabsAnchor = useRef<HTMLDivElement>(null);
 
   const addItem = useCartStore((s) => s.addItem);
   const setBuyNow = useBuyNowStore((s) => s.set);
   const showToast = useToastStore((s) => s.show);
   const pushRecent = useRecentStore((s) => s.push);
+  const recentIds = useRecentStore((s) => s.ids);
   const myReviews = useReviewStore((s) => s.reviews);
-
-  const mounted = useHydrated();
+  const hydrated = useHydrated();
+  const activeSection = useScrollSpy(SECTION_IDS);
 
   useEffect(() => {
     pushRecent(product.id);
   }, [product.id, pushRecent]);
 
-  // 리뷰 등록 후 '확인하기'(…#reviews)로 들어오면 리뷰 탭을 바로 엽니다.
-  useEffect(() => {
-    if (window.location.hash === "#reviews") {
-      setTab("reviews");
-      requestAnimationFrame(() => tabsAnchor.current?.scrollIntoView({ block: "start" }));
-    }
-  }, []);
-
-  // 내가 주문 내역에서 쓴 리뷰를 맨 위에 함께 보여 줍니다(저장값이라 마운트 후에만).
+  // 내가 주문 내역에서 쓴 리뷰를 맨 위에 함께 보여 줍니다(저장값이라 하이드레이션 후에만).
   const myProductReviews = useMemo(
-    () => (mounted ? myReviews.filter((r) => r.productId === product.id) : []),
-    [mounted, myReviews, product.id]
+    () => (hydrated ? myReviews.filter((r) => r.productId === product.id) : []),
+    [hydrated, myReviews, product.id]
   );
   const productReviews = useMemo(
     () => [...myProductReviews, ...getProductReviews(product.id)],
     [myProductReviews, product.id]
   );
-  // 탭·요약의 리뷰 수는 상품의 전체 리뷰 수(+ 방금 쓴 내 리뷰) — 목록은 그중 글이 있는 것만 보여 줍니다.
+  // 리뷰 수는 상품의 전체 리뷰 수(별점만 남긴 것 포함, + 방금 쓴 내 리뷰) — 목록은 그중 글이 있는 것만 보여 줍니다.
   const reviewTotal = product.reviewCount + myProductReviews.length;
 
-  const unitPrice = useMemo(() => {
-    const extra = product.options?.find((o) => o.label === optionLabel)?.extraPrice ?? 0;
-    return product.price + extra;
-  }, [product, optionLabel]);
+  // 최근 본 상품 — 지금 보는 상품은 빼고
+  const recent = hydrated
+    ? recentIds
+        .filter((id) => id !== product.id)
+        .map((id) => getProduct(id))
+        .filter((p): p is Product => !!p)
+        .slice(0, 4)
+    : [];
 
+  const selectedOption = product.options?.find((o) => o.label === optionLabel);
+  const unitPrice = product.price + (selectedOption?.extraPrice ?? 0);
   const total = unitPrice * quantity;
-  const delivery = expectedDeliveryDate(1);
+  const rate = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
 
   function addToCart() {
     const result = addItem(product.id, quantity, optionLabel);
@@ -117,22 +121,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     router.push("/checkout?mode=now");
   }
 
-  /** 탭을 바꾸거나 별점을 누르면 탭 영역 맨 위로 — 아래로 내려가 있어도 새 내용의 처음부터 읽습니다. */
-  function openTab(id: TabId, scroll = false) {
-    setTab(id);
-    const anchor = tabsAnchor.current;
-    if (anchor && (scroll || anchor.getBoundingClientRect().top < 0)) {
-      anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-  const { tabListProps, tabProps, panelProps } = useTabs(TAB_IDS, tab, openTab);
-
+  const facts = [
+    { icon: Sprout, label: "수확", value: product.harvestDetail },
+    { icon: Box, label: "포장", value: `${product.packaging} · ${product.temp} 배송` },
+    { icon: Truck, label: "도착", value: soldOut ? null : "eta" },
+    { icon: Refrigerator, label: "보관", value: product.storageTip },
+  ] as const;
 
   return (
     <div className="container-page py-5 md:py-8">
       {/* Breadcrumb */}
-      <nav className="mb-4 flex items-center gap-1 text-xs text-bark-400" aria-label="breadcrumb">
-        <Link href="/" className="hover:text-leaf-700">홈</Link>
+      <nav className="mb-4 flex items-center gap-1 text-xs text-bark-500" aria-label="breadcrumb">
+        <Link href="/" className="hover:text-leaf-700">
+          홈
+        </Link>
         <ChevronRight className="h-3 w-3" />
         <Link href={`/products?category=${category?.slug}`} className="hover:text-leaf-700">
           {category?.name}
@@ -141,322 +143,434 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <span className="truncate text-bark-600">{product.name}</span>
       </nav>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-        {/* Image */}
-        <div className="group relative lg:sticky lg:top-32 lg:self-start">
-          <div className="overflow-hidden rounded-[20px] border border-bark-100 bg-white">
-            <div className="transition-transform duration-500 ease-out group-hover:scale-[1.04]">
-              <ProductImage
-                product={product}
-                priority
-                sizes="(max-width: 1023px) 100vw, 600px"
-                className="w-full rounded-[20px]"
-                iconSize="text-7xl"
-              />
-            </div>
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-2 lg:gap-12">
+        {/* 사진 */}
+        <div className="relative lg:sticky lg:top-32 lg:self-start">
+          <div className={`overflow-hidden rounded-3xl bg-cream-200 ${soldOut ? "opacity-70" : ""}`}>
+            <ProductImage
+              product={product}
+              priority
+              sizes="(max-width: 1023px) 100vw, 600px"
+              className="w-full"
+              iconSize="text-7xl"
+            />
           </div>
           {product.badges.length > 0 && (
             <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-1.5">
-              {product.badges.map((b) => (
-                <Badge key={b} label={b} />
-              ))}
+              {product.badges
+                .filter((b) => b !== "산지직송")
+                .slice(0, 3)
+                .map((b) => (
+                  <Badge key={b} label={b} />
+                ))}
             </div>
           )}
         </div>
 
-        {/* Info */}
+        {/* 구매 정보 */}
         <div>
-          <Link
-            href={`/farms/${farm?.slug}`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-leaf-700 hover:underline"
-          >
-            <MapPin className="h-3.5 w-3.5" />
-            {product.region} · {farm?.name}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
+          {/* 생산자 — 누가 키웠는지가 가장 먼저 */}
+          {farm && (
+            <a href="#producer" className="group inline-flex items-center gap-2.5 rounded-full focus-ring">
+              <span className="relative h-9 w-9 overflow-hidden rounded-full bg-cream-200">
+                <FarmImage farm={farm} sizes="36px" />
+              </span>
+              <span className="text-sm leading-tight">
+                <span className="block font-semibold text-bark-900 group-hover:text-leaf-700">{farm.name}</span>
+                <span className="block text-bark-500">
+                  {farm.region} · {farm.owner} 농부
+                </span>
+              </span>
+            </a>
+          )}
 
-          <div className="mt-2 flex items-start justify-between gap-3">
-            <h1 className="text-xl font-extrabold leading-snug text-bark-900 md:text-2xl">
-              {product.name} <span className="font-bold text-bark-500">{product.unit}</span>
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <h1 className="text-[22px] font-extrabold leading-snug tracking-tight text-bark-900 [word-break:keep-all] md:text-[28px]">
+              {product.name} <span className="font-semibold text-bark-500">{product.unit}</span>
             </h1>
             <WishlistButton productId={product.id} size="lg" className="border border-bark-100" />
           </div>
+          <p className="mt-1.5 text-[16px] leading-relaxed text-bark-600">{product.summary}</p>
 
-          <p className="mt-2 text-sm leading-relaxed text-bark-500">{product.summary}</p>
+          <a href="#reviews" className="mt-2.5 inline-flex items-center gap-1.5 rounded-md text-sm focus-ring">
+            <Star className="h-4 w-4 fill-tangerine-400 text-tangerine-400" aria-hidden />
+            <span className="font-bold text-bark-900">{product.rating.toFixed(1)}</span>
+            <span className="text-bark-500 underline-offset-2 hover:underline">후기 {reviewTotal.toLocaleString()}개</span>
+          </a>
 
-          <button
-            type="button"
-            onClick={() => openTab("reviews", true)}
-            aria-label={`리뷰 ${product.reviewCount}개 보기`}
-            className="mt-3 inline-flex rounded-md focus-ring"
-          >
-            <RatingStars rating={product.rating} reviewCount={product.reviewCount} size="md" />
-          </button>
-
-          {/* Price */}
-          <div className="mt-5 border-t border-bark-100 pt-5">
-            {product.originalPrice && (
+          {/* 가격 */}
+          <div className="mt-5">
+            {product.originalPrice && !soldOut && (
               <p className="text-sm text-bark-400 line-through">{formatWon(product.originalPrice)}</p>
             )}
             <p className="flex items-baseline gap-2">
-              {product.originalPrice && (
-                <span className="text-2xl font-extrabold text-tangerine-600">
-                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                </span>
-              )}
-              <span className="text-[34px] font-extrabold text-bark-900">
+              {rate !== null && !soldOut && <span className="text-2xl font-extrabold text-tangerine-600">{rate}%</span>}
+              <span className={`text-[32px] font-extrabold tracking-tight ${soldOut ? "text-bark-400" : "text-bark-900"}`}>
                 {formatPrice(product.price)}
                 <span className="text-xl">원</span>
               </span>
             </p>
           </div>
 
-          {/* Delivery box */}
-          <div className="mt-5 space-y-2 rounded-card bg-leaf-50 p-4 text-sm">
-            <p className="flex items-start gap-2 text-bark-700">
-              <Truck className="mt-0.5 h-4 w-4 shrink-0 text-leaf-600" />
-              <span>
-                오늘 주문하면 <b className="text-leaf-700">{delivery.label} 도착 예정</b>
-              </span>
-            </p>
-            <p className="flex items-start gap-2 text-bark-600">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-leaf-600" />
-              <span>{product.shippingNote}</span>
-            </p>
-          </div>
-
-          {/* Options */}
-          {product.options && (
-            <div className="mt-5">
-              <p className="mb-2 text-sm font-bold text-bark-800">옵션 선택</p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {product.options.map((o) => (
-                  <button
-                    key={o.label}
-                    type="button"
-                    onClick={() => setOptionLabel(o.label)}
-                    aria-pressed={optionLabel === o.label}
-                    className={`flex h-13 items-center justify-between gap-2 rounded-xl border px-4 text-[16px] transition-colors duration-200 ${
-                      optionLabel === o.label
-                        ? "border-leaf-600 bg-leaf-50 font-bold text-leaf-800"
-                        : "border-bark-200 bg-white text-bark-600 hover:border-leaf-300"
-                    }`}
-                  >
-                    <span>{o.label}</span>
-                    {o.extraPrice > 0 && <span className="shrink-0 text-sm">+{formatWon(o.extraPrice)}</span>}
-                  </button>
-                ))}
-              </div>
+          {soldOut && (
+            <div className="mt-4 rounded-2xl bg-bark-900 px-4 py-3.5 text-white" role="status">
+              <p className="font-bold">다음 수확을 준비하고 있어요</p>
+              <p className="mt-0.5 text-sm text-white/80">
+                {product.restockNote} · 제철({seasonLabel(product.season)})에만 보내드려요.
+              </p>
             </div>
           )}
 
-          {/* Quantity + total */}
-          <div className="mt-5 rounded-card border border-bark-100 bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
-              <QuantityStepper value={quantity} onChange={setQuantity} max={maxQuantity} />
-              <div className="min-w-0 text-right">
-                <p className="text-xs text-bark-400">총 상품금액</p>
-                <p className="text-xl font-extrabold text-bark-900">{formatWon(total)}</p>
-              </div>
-            </div>
-            {quantity >= maxQuantity ? (
-              <p className="mt-2.5 text-sm font-medium text-tangerine-600" role="status">
-                한 번에 최대 {maxQuantity}개까지 주문할 수 있어요.
-              </p>
-            ) : (
-              product.stock <= LOW_STOCK_THRESHOLD && (
-                <p className="mt-2.5 text-sm font-medium text-tangerine-600">{product.stock}개 남았어요</p>
+          {/* 신선 정보 — 박스 대신 줄로 나눠 가볍게 */}
+          <dl className="mt-5 divide-y divide-bark-100 border-y border-bark-100">
+            {facts.map(({ icon: Icon, label, value }) =>
+              value === null ? null : (
+                <div key={label} className="flex gap-3 py-3">
+                  <dt className="flex w-16 shrink-0 items-center gap-1.5 self-start text-sm font-semibold text-bark-500">
+                    <Icon className="h-4 w-4 text-leaf-700" aria-hidden />
+                    {label}
+                  </dt>
+                  <dd className="min-w-0 flex-1 text-[15px] leading-relaxed text-bark-800">
+                    {value === "eta" ? <EtaLine products={[product]} /> : value}
+                  </dd>
+                </div>
               )
             )}
-          </div>
+          </dl>
 
-          {/* Desktop CTA */}
-          <div className="mt-5 hidden gap-3 md:flex">
-            <button type="button" onClick={addToCart} className="btn-outline h-14 flex-1 text-[18px] font-bold">
-              <ShoppingCart className="h-[18px] w-[18px]" />
-              장바구니
-            </button>
-            <button type="button" onClick={buyNow} className="btn-primary h-14 flex-1 text-[18px]">
-              바로 구매
-            </button>
-          </div>
+          {/* 옵션 — 무엇이 다른지(양·용도)를 함께 */}
+          {product.options && !soldOut && (
+            <fieldset className="mt-5">
+              <legend className="mb-2 text-sm font-bold text-bark-800">옵션 선택</legend>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {product.options.map((o) => {
+                  const selected = optionLabel === o.label;
+                  return (
+                    <button
+                      key={o.label}
+                      type="button"
+                      onClick={() => setOptionLabel(o.label)}
+                      aria-pressed={selected}
+                      className={`flex min-h-[3.75rem] items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors duration-200 ${
+                        selected ? "border-leaf-700 bg-leaf-50 ring-1 ring-leaf-700" : "border-bark-200 bg-white hover:border-leaf-400"
+                      }`}
+                    >
+                      <span className="min-w-0">
+                        <span className={`block text-[16px] ${selected ? "font-bold text-leaf-900" : "font-semibold text-bark-800"}`}>
+                          {o.label}
+                        </span>
+                        {o.note && <span className="block text-sm text-bark-500">{o.note}</span>}
+                      </span>
+                      <span className="shrink-0 text-sm font-semibold text-bark-600">
+                        {o.extraPrice > 0 ? `+${formatWon(o.extraPrice)}` : "기본"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {!soldOut && (
+            <>
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <QuantityStepper value={quantity} onChange={setQuantity} max={maxQuantity} />
+                <div className="min-w-0 text-right">
+                  <p className="text-sm text-bark-500">총 상품금액</p>
+                  <p className="text-2xl font-extrabold tracking-tight text-bark-900">{formatWon(total)}</p>
+                </div>
+              </div>
+              {quantity >= maxQuantity ? (
+                <p className="mt-2 text-sm font-medium text-tangerine-700" role="status">
+                  한 번에 최대 {maxQuantity}개까지 주문할 수 있어요.
+                </p>
+              ) : (
+                product.stock <= LOW_STOCK_THRESHOLD && (
+                  <p className="mt-2 text-sm font-medium text-tangerine-700">이번 수확분 {product.stock}개 남았어요</p>
+                )
+              )}
+
+              {/* PC 구매 버튼 */}
+              <div className="mt-5 hidden gap-3 md:flex">
+                <button type="button" onClick={addToCart} className="btn-outline h-14 flex-1 text-[18px] font-bold">
+                  <ShoppingCart className="h-[18px] w-[18px]" />
+                  장바구니
+                </button>
+                <button type="button" onClick={buyNow} className="btn-primary h-14 flex-1 text-[18px]">
+                  바로 구매
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Tabs — 헤더 바로 아래에 붙습니다(모바일 56px, PC 헤더+카테고리 바 113px). */}
-      <div ref={tabsAnchor} id="reviews" className="mt-12 scroll-mt-14 md:mt-16 md:scroll-mt-[113px]">
-        <div
-          {...tabListProps}
-          aria-label="상품 상세"
-          className="sticky top-14 z-10 -mx-4 grid grid-cols-5 border-b border-bark-100 bg-cream-100/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 md:top-[113px] lg:mx-0 lg:flex lg:px-0"
-        >
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              {...tabProps(t.id)}
-              className={`h-13 min-w-0 whitespace-nowrap border-b-2 text-[16px] font-semibold transition-colors duration-200 lg:px-6 ${
-                tab === t.id
-                  ? "border-leaf-700 text-leaf-800"
-                  : "border-transparent text-bark-400 hover:text-bark-600"
-              }`}
-            >
-              {t.label}
-              {t.id === "reviews" && (
-                <span className="ml-1 text-tangerine-600">{reviewTotal.toLocaleString()}</span>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* 구역 바로가기 — 헤더 바로 아래에 붙습니다(모바일 56px, PC 헤더+카테고리 바 113px). */}
+      <nav
+        aria-label="상품 상세 구역"
+        className="sticky top-14 z-10 -mx-4 mt-12 grid grid-cols-4 border-b border-bark-100 bg-cream-100/95 px-4 backdrop-blur sm:-mx-6 sm:px-6 md:top-[113px] md:mt-16 lg:mx-0 lg:flex lg:px-0"
+      >
+        {SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            aria-current={activeSection === s.id ? "true" : undefined}
+            className={`flex h-13 min-w-0 items-center justify-center whitespace-nowrap border-b-2 text-[16px] font-semibold transition-colors duration-200 lg:px-6 ${
+              activeSection === s.id ? "border-leaf-700 text-leaf-800" : "border-transparent text-bark-500 hover:text-bark-700"
+            }`}
+          >
+            {s.label}
+            {s.id === "reviews" && <span className="ml-1 text-tangerine-700">{reviewTotal.toLocaleString()}</span>}
+          </a>
+        ))}
+      </nav>
 
-        <div {...panelProps} className="py-8 outline-none md:py-10">
-          {tab === "intro" && (
-            <div className="max-w-2xl space-y-5">
-              {product.description.map((para, i) => (
-                <p key={i} className="leading-relaxed text-bark-700">{para}</p>
-              ))}
-              <div className="rounded-card bg-cream-200/70 p-4 text-sm text-bark-600">
-                <b className="text-bark-800">보관 방법</b> · {product.storageTip}
-              </div>
-            </div>
-          )}
-
-          {tab === "farm" && farm && (
-            <div className="max-w-2xl">
-              <p className="text-lg font-bold text-leaf-800">“{farm.quote}”</p>
-              <p className="mt-1 text-sm text-bark-500">
-                {farm.region} · {farm.owner} 농부 · {farm.since}년부터
+      <div className="max-w-3xl divide-y divide-bark-100">
+        {/* 상품정보 */}
+        <section id="info" aria-labelledby="info-title" className="scroll-mt-28 py-9 md:scroll-mt-44 md:py-12">
+          <h2 id="info-title" className="text-lg font-extrabold text-bark-900 md:text-xl">
+            상품정보
+          </h2>
+          <div className="mt-4 space-y-4">
+            {product.description.map((para, i) => (
+              <p key={i} className="text-[16px] leading-[1.8] text-bark-700">
+                {para}
               </p>
-              <div className="mt-4 space-y-4">
-                {farm.story.map((para, i) => (
-                  <p key={i} className="leading-relaxed text-bark-700">{para}</p>
+            ))}
+          </div>
+
+          <dl className="mt-7 grid grid-cols-1 gap-x-8 gap-y-4 rounded-2xl bg-white p-5 sm:grid-cols-2">
+            <div>
+              <dt className="text-sm font-semibold text-bark-500">실제 크기와 양</dt>
+              <dd className="mt-0.5 text-[16px] font-semibold text-bark-900">
+                {product.unit} · {product.amount}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-bark-500">출하 시기</dt>
+              <dd className="mt-0.5 text-[16px] font-semibold text-bark-900">
+                {seasonLabel(product.season)}
+                {inSeason && <span className="ml-2 text-sm font-bold text-leaf-700">지금 제철</span>}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-bark-500">원산지</dt>
+              <dd className="mt-0.5 text-[16px] font-semibold text-bark-900">국내산 ({product.region})</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-bark-500">배송 온도</dt>
+              <dd className="mt-0.5 text-[16px] font-semibold text-bark-900">{product.temp}</dd>
+            </div>
+          </dl>
+
+          {product.options && (
+            <div className="mt-6">
+              <h3 className="text-[16px] font-bold text-bark-900">옵션별 차이</h3>
+              <ul className="mt-2 divide-y divide-bark-100 rounded-2xl bg-white px-5">
+                {product.options.map((o) => (
+                  <li key={o.label} className="flex items-center justify-between gap-4 py-3 text-[15px]">
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-bark-800">{o.label}</span>
+                      {o.note && <span className="block text-sm text-bark-500">{o.note}</span>}
+                    </span>
+                    <span className="shrink-0 font-semibold text-bark-800">{formatWon(product.price + o.extraPrice)}</span>
+                  </li>
                 ))}
-              </div>
-              <Link
-                href={`/farms/${farm.slug}`}
-                className="btn-outline mt-6 h-12 px-5 text-[16px]"
-              >
-                농가 이야기 더 보기
-                <ChevronRight className="h-4 w-4" />
-              </Link>
+              </ul>
             </div>
           )}
 
-          {tab === "info" && (
-            <dl className="max-w-2xl divide-y divide-bark-100 rounded-card border border-bark-100 bg-white text-sm">
+          <div className="mt-6">
+            <h3 className="text-[16px] font-bold text-bark-900">이렇게 보내드려요</h3>
+            <ol className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {[
-                ["상품명", `${product.name} ${product.unit}`],
-                ["원산지", product.region],
-                ["생산자", `${farm?.name} (${farm?.owner})`],
-                ["인증", farm?.certifications.join(", ") ?? "-"],
-                ["보관 방법", product.storageTip],
-                ["재고", `${product.stock}개`],
-              ].map(([k, v]) => (
-                <div key={k} className="flex">
-                  <dt className="w-28 shrink-0 bg-cream-50 px-4 py-3 font-semibold text-bark-500">{k}</dt>
-                  <dd className="flex-1 px-4 py-3 text-bark-700">{v}</dd>
-                </div>
+                { step: "수확·준비", text: product.harvest },
+                { step: "포장", text: product.packaging },
+                {
+                  step: "출고·도착",
+                  text: product.leadDays ? "준비가 끝나면 출고 · 다음 날 도착" : "오후 2시 전 주문 당일 출고 · 다음 날 도착",
+                },
+              ].map((s, i) => (
+                <li key={s.step} className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-sm font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-bark-900">{s.step}</span>
+                    <span className="mt-0.5 block text-[15px] leading-snug text-bark-700 [word-break:keep-all]">{s.text}</span>
+                  </span>
+                </li>
               ))}
-            </dl>
-          )}
+            </ol>
+          </div>
+        </section>
 
-          {tab === "shipping" && (
-            <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-bark-700">
-              <div className="rounded-card border border-bark-100 bg-white p-5">
-                <h3 className="font-bold text-bark-900">배송 안내</h3>
-                <p className="mt-2">{product.shippingNote}</p>
-                <p className="mt-1">
-                  {formatPrice(FREE_SHIPPING_THRESHOLD)}원 이상 주문 시 무료배송, 미만 시 배송비{" "}
-                  {formatPrice(SHIPPING_FEE)}원이 붙습니다.
-                </p>
+        {/* 생산자 — 이야기와 상품을 이어서 */}
+        {farm && (
+          <section id="producer" aria-labelledby="producer-title" className="scroll-mt-28 py-9 md:scroll-mt-44 md:py-12">
+            <h2 id="producer-title" className="text-lg font-extrabold text-bark-900 md:text-xl">
+              생산자
+            </h2>
+            <div className="mt-4 overflow-hidden rounded-2xl bg-white sm:flex">
+              <div className="relative aspect-[16/10] sm:aspect-auto sm:w-2/5">
+                <FarmImage farm={farm} sizes="(max-width: 639px) 100vw, 320px" />
               </div>
-              <div className="rounded-card border border-bark-100 bg-white p-5">
-                <h3 className="font-bold text-bark-900">교환/반품 안내</h3>
-                <p className="mt-2">
-                  신선식품 특성상 단순 변심에 의한 교환·반품은 어렵습니다. 상품 하자나 배송 중 파손은
-                  수령 후 24시간 이내 사진과 함께 문의해 주시면 빠르게 처리해드립니다.
+              <div className="p-5 sm:flex-1">
+                <p className="text-lg font-bold leading-snug text-leaf-900 [word-break:keep-all]">“{farm.quote}”</p>
+                <p className="mt-1.5 flex items-center gap-1 text-sm text-bark-500">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {farm.name} · {farm.owner} 농부 · {farm.since}년부터
                 </p>
+                <p className="mt-3 text-[15px] leading-relaxed text-bark-700">{farm.intro}</p>
+                <p className="mt-3 text-sm text-bark-600">
+                  <span className="font-semibold text-bark-800">재배 방식</span> · {farm.method}
+                </p>
+                {farm.certifications.length > 0 && (
+                  <p className="mt-1 text-sm text-bark-600">
+                    <span className="font-semibold text-bark-800">인증</span> · {farm.certifications.join(", ")}
+                  </p>
+                )}
+                <Link
+                  href={`/farms/${farm.slug}`}
+                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 hover:underline"
+                >
+                  농가 이야기 더 보기
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
-          )}
-
-          {tab === "reviews" && (
-            <div className="max-w-2xl">
-              <div className="mb-6 flex items-center gap-4 rounded-card border border-bark-100 bg-white p-5">
-                <p className="text-3xl font-extrabold text-bark-900">{product.rating.toFixed(1)}</p>
-                <div>
-                  <p className="flex gap-0.5" aria-label={`5점 만점에 ${product.rating.toFixed(1)}점`}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star
-                        key={n}
-                        className={`h-5 w-5 ${
-                          n <= Math.round(product.rating) ? "fill-tangerine-400 text-tangerine-400" : "text-bark-200"
-                        }`}
-                      />
-                    ))}
-                  </p>
-                  <p className="mt-1 text-sm text-bark-500">리뷰 {reviewTotal.toLocaleString()}개</p>
-                </div>
-              </div>
-              {productReviews.length === 0 ? (
-                <p className="py-8 text-center text-[16px] text-bark-400">아직 글로 남긴 후기가 없어요.</p>
-              ) : (
-                <ul className="divide-y divide-bark-100">
-                  {productReviews.map((r) => (
-                    <li key={r.id} className="py-5">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-bark-400">
-                        <RatingStars rating={r.rating} />
-                        <span className="font-medium text-bark-600">{r.author}</span>
-                        <span>{formatDate(r.date)}</span>
-                        {r.id.startsWith("my-") && (
-                          <span className="rounded-md bg-leaf-50 px-1.5 py-0.5 font-semibold text-leaf-700">내 리뷰</span>
-                        )}
-                      </div>
-                      <p className="mt-2 text-[16px] leading-relaxed text-bark-700">{r.content}</p>
+            {farmProducts.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-[16px] font-bold text-bark-900">이 농가에서 함께 보내는 상품</h3>
+                <p className="mt-0.5 text-sm text-bark-500">같은 농가 상품은 한 상자로 함께 출발해요.</p>
+                <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3">
+                  {farmProducts.map((p) => (
+                    <li key={p.id}>
+                      <ProductCard product={p} showFarm={false} />
                     </li>
                   ))}
                 </ul>
-              )}
-            </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 배송 */}
+        <section id="shipping" aria-labelledby="shipping-title" className="scroll-mt-28 py-9 md:scroll-mt-44 md:py-12">
+          <h2 id="shipping-title" className="text-lg font-extrabold text-bark-900 md:text-xl">
+            배송 · 교환
+          </h2>
+          <ul className="mt-4 space-y-2.5 text-[15px] leading-relaxed text-bark-700">
+            {shippingPolicy(product).map((line) => (
+              <li key={line} className="flex gap-2.5">
+                <CalendarClock className="mt-1 h-4 w-4 shrink-0 text-leaf-700" aria-hidden />
+                {line}
+              </li>
+            ))}
+            <li className="flex gap-2.5">
+              <Truck className="mt-1 h-4 w-4 shrink-0 text-leaf-700" aria-hidden />
+              배송비 {formatPrice(SHIPPING_FEE)}원 · {formatPrice(FREE_SHIPPING_THRESHOLD)}원 이상 주문하면 무료예요. 여러 농가 상품을 함께 사도 배송비는 한 번만 받아요.
+            </li>
+          </ul>
+          <p className="mt-5 rounded-2xl bg-white p-4 text-[15px] leading-relaxed text-bark-700">
+            <b className="text-bark-900">교환·환불</b> · 신선식품이라 단순 변심 교환은 어려워요. 받은 상품이 상했거나 파손됐다면 받은 날로부터
+            24시간 안에 사진과 함께 알려 주세요. 확인 후 다시 보내 드리거나 환불해 드려요.
+          </p>
+        </section>
+
+        {/* 후기 */}
+        <section id="reviews" aria-labelledby="reviews-title" className="scroll-mt-28 py-9 md:scroll-mt-44 md:py-12">
+          <div className="flex items-end justify-between gap-3">
+            <h2 id="reviews-title" className="text-lg font-extrabold text-bark-900 md:text-xl">
+              후기 <span className="text-bark-500">{reviewTotal.toLocaleString()}</span>
+            </h2>
+            <p className="flex items-center gap-1 text-[16px]">
+              <Star className="h-5 w-5 fill-tangerine-400 text-tangerine-400" aria-hidden />
+              <b className="text-xl font-extrabold text-bark-900">{product.rating.toFixed(1)}</b>
+              <span className="text-bark-500">/ 5</span>
+            </p>
+          </div>
+          {productReviews.length === 0 ? (
+            <p className="py-8 text-center text-[16px] text-bark-500">아직 글로 남긴 후기가 없어요.</p>
+          ) : (
+            <ul className="mt-2 divide-y divide-bark-100">
+              {productReviews.map((r) => (
+                <li key={r.id} className="py-5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-bark-500">
+                    <span className="flex" role="img" aria-label={`별점 ${r.rating}점`}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star
+                          key={n}
+                          className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-tangerine-400 text-tangerine-400" : "text-bark-200"}`}
+                          aria-hidden
+                        />
+                      ))}
+                    </span>
+                    <span className="font-semibold text-bark-700">{r.author}</span>
+                    <span>{formatDate(r.date)}</span>
+                    {r.id.startsWith("my-") && (
+                      <span className="rounded-md bg-leaf-50 px-1.5 py-0.5 font-semibold text-leaf-700">내 리뷰</span>
+                    )}
+                  </div>
+                  {r.option && <p className="mt-1 text-sm text-bark-500">옵션 · {r.option}</p>}
+                  <p className="mt-2 text-[16px] leading-relaxed text-bark-800">{r.content}</p>
+                </li>
+              ))}
+            </ul>
           )}
-        </div>
+        </section>
       </div>
 
-      {/* Related */}
-      {related.length > 0 && (
-        <section className="mt-6 border-t border-bark-100 pt-10">
-          <h2 className="mb-5 text-lg font-extrabold text-bark-900 md:text-2xl">함께 보면 좋은 상품</h2>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-4 md:gap-x-5">
-            {related.map((p) => (
+      {/* 함께 사면 좋은 상품 — 추천마다 근거를 붙입니다 */}
+      {recommendations.length > 0 && (
+        <section className="mt-4 border-t border-bark-100 pt-10" aria-labelledby="recommend-title">
+          <h2 id="recommend-title" className="mb-5 text-lg font-extrabold text-bark-900 md:text-2xl">
+            {soldOut ? "지금 받아 볼 수 있는 상품" : "함께 사면 좋은 상품"}
+          </h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-5">
+            {recommendations.map((r) => (
+              <ProductCard key={r.product.id} product={r.product} reason={r.reason} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recent.length > 0 && (
+        <section className="mt-12" aria-labelledby="recent-detail-title">
+          <h2 id="recent-detail-title" className="mb-4 text-base font-extrabold text-bark-900 md:text-lg">
+            최근 본 상품
+          </h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-5">
+            {recent.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Mobile sticky CTA */}
-      {/* 이 화면에서는 하단 탭을 숨기고 구매 바가 바닥을 씁니다(MobileNav의 isPurchaseFocusRoute). */}
+      {/* 모바일 구매 바 — 이 화면에서는 하단 탭을 숨기고 구매 바가 바닥을 씁니다(MobileNav의 isPurchaseFocusRoute). */}
       <div
         className="fixed inset-x-0 bottom-0 z-30 border-t border-bark-100 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        {/* 글자를 키운 뒤에도 좁은 화면에서 잘리지 않도록 장바구니는 아이콘 버튼으로 둡니다. */}
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={addToCart}
-            aria-label="장바구니에 담기"
-            className="btn-outline h-13 w-13 shrink-0 px-0"
-          >
-            <ShoppingCart className="h-[22px] w-[22px]" />
-          </button>
-          <button
-            type="button"
-            onClick={buyNow}
-            className="btn-primary h-13 min-w-0 flex-1 text-[18px]"
-          >
-            {formatWon(total)} 바로 구매
-          </button>
-        </div>
+        {soldOut ? (
+          <div className="flex items-center gap-2.5">
+            <WishlistButton productId={product.id} size="lg" className="border border-bark-200" />
+            <p className="flex h-13 min-w-0 flex-1 items-center justify-center rounded-xl bg-bark-100 px-3 text-[16px] font-bold text-bark-600">
+              {product.restockNote}
+            </p>
+          </div>
+        ) : (
+          // 글자를 키운 뒤에도 좁은 화면에서 잘리지 않도록 장바구니는 아이콘 버튼으로 둡니다.
+          <div className="flex items-center gap-2.5">
+            <button type="button" onClick={addToCart} aria-label="장바구니에 담기" className="btn-outline h-13 w-13 shrink-0 px-0">
+              <ShoppingCart className="h-[22px] w-[22px]" />
+            </button>
+            <button type="button" onClick={buyNow} className="btn-primary h-13 min-w-0 flex-1 text-[18px]">
+              {formatWon(total)} 바로 구매
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -10,10 +10,15 @@ import { getProduct } from "@/lib/data/products";
 
 export const HARD_MAX_QUANTITY = 99;
 
-/** 한 상품을 장바구니에 담을 수 있는 최대 수량 — 재고를 넘지 않습니다. */
+/** 한 상품을 장바구니에 담을 수 있는 최대 수량 — 재고를 넘지 않습니다(품절이면 0). */
 export function maxQuantityFor(productId: string): number {
   const stock = getProduct(productId)?.stock ?? HARD_MAX_QUANTITY;
-  return Math.max(1, Math.min(stock, HARD_MAX_QUANTITY));
+  return Math.max(0, Math.min(stock, HARD_MAX_QUANTITY));
+}
+
+/** 지금 주문할 수 있는 항목만 — 품절된 상품은 장바구니에 남겨 두되 주문·금액에서는 뺍니다. */
+export function orderableItems<T extends Pick<CartItem, "productId">>(items: readonly T[]): T[] {
+  return items.filter((i) => (getProduct(i.productId)?.stock ?? 0) > 0);
 }
 
 export function cartKey(productId: string, optionLabel?: string): string {
@@ -25,7 +30,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 /**
  * 장바구니 항목 정리
  * - 없는 상품·없는 옵션은 버립니다(옵션이 있는 상품인데 옵션이 비면 첫 옵션으로 맞춥니다).
- * - 수량은 1 ~ 재고 사이 정수로 맞춥니다.
+ * - 수량은 1 ~ 재고 사이 정수로 맞춥니다. 품절된 상품은 '품절'로 보여 주려고 남겨 둡니다.
  * - 같은 상품·옵션이 두 번 있으면 하나로 합칩니다.
  */
 export function sanitizeCartItems(raw: unknown): CartItem[] {
@@ -52,7 +57,7 @@ export function sanitizeCartItems(raw: unknown): CartItem[] {
     merged.set(key, {
       productId: product.id,
       optionLabel,
-      quantity: Math.min(previous + quantity, maxQuantityFor(product.id)),
+      quantity: Math.min(previous + quantity, maxQuantityFor(product.id) || HARD_MAX_QUANTITY),
     });
   }
   return [...merged.values()];

@@ -73,7 +73,7 @@ export default function MiraeAILabSampleCTA({
                 href={consultHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative inline-flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-mirae-cyan to-mirae-sky px-8 text-lg font-extrabold text-mirae-ink shadow-[0_8px_28px_-10px_rgba(25,198,244,0.65)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-10px_rgba(25,198,244,0.8)] focus-visible:ring-2 focus-visible:ring-mirae-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-mirae-ink sm:w-auto"
+                className="group relative inline-flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-mirae-cyan to-mirae-sky px-5 text-[17px] font-extrabold whitespace-nowrap min-[360px]:text-lg sm:px-8 text-mirae-ink shadow-[0_8px_28px_-10px_rgba(25,198,244,0.65)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-10px_rgba(25,198,244,0.8)] focus-visible:ring-2 focus-visible:ring-mirae-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-mirae-ink sm:w-auto"
               >
                 {/* 은은한 light sweep — 6초에 한 번 짧게 지나갑니다 */}
                 <span

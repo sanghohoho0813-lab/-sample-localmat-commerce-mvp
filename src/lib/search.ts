@@ -46,7 +46,10 @@ export function searchCatalog(
   const found = products.filter((p) => matches(productText(p), q));
   const inName = (p: Product) => (matches(`${p.name} ${p.unit}`, q) ? 0 : 1);
   return {
-    products: [...found].sort((a, b) => inName(a) - inName(b) || b.salesCount - a.salesCount),
+    // 살 수 있는 상품 → 이름에서 찾은 상품 → 많이 팔린 순
+    products: [...found].sort(
+      (a, b) => Number(b.stock > 0) - Number(a.stock > 0) || inName(a) - inName(b) || b.salesCount - a.salesCount
+    ),
     farms: farms.filter((f) => matches(farmText(f), q)),
   };
 }

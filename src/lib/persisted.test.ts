@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { maxQuantityFor, sanitizeCartItems, sanitizeOrders, sanitizeProductIds, sanitizeReviews } from "./persisted";
+import {
+  maxQuantityFor,
+  orderableItems,
+  sanitizeCartItems,
+  sanitizeOrders,
+  sanitizeProductIds,
+  sanitizeReviews,
+} from "./persisted";
 
 describe("sanitizeCartItems", () => {
   it("배열이 아니면 빈 장바구니", () => {
@@ -11,8 +18,8 @@ describe("sanitizeCartItems", () => {
       sanitizeCartItems([
         { productId: "gone", quantity: 1 },
         { productId: "p05", optionLabel: "10kg", quantity: 1 },
-        { productId: "p01", quantity: 0 },
-        { productId: "p01", quantity: "abc" },
+        { productId: "p02", quantity: 0 },
+        { productId: "p02", quantity: "abc" },
         null,
       ])
     ).toEqual([]);
@@ -21,26 +28,35 @@ describe("sanitizeCartItems", () => {
     expect(
       sanitizeCartItems([
         { productId: "p05", quantity: 1 },
-        { productId: "p01", optionLabel: "아무거나", quantity: 1 },
+        { productId: "p02", optionLabel: "아무거나", quantity: 1 },
       ])
     ).toEqual([
       { productId: "p05", optionLabel: "500g (1팩)", quantity: 1 },
-      { productId: "p01", optionLabel: undefined, quantity: 1 },
+      { productId: "p02", optionLabel: undefined, quantity: 1 },
     ]);
   });
   it("수량은 재고를 넘지 않고, 같은 항목은 합친다", () => {
-    const max = maxQuantityFor("p26");
-    expect(max).toBe(20);
+    const max = maxQuantityFor("p24");
+    expect(max).toBe(25);
     expect(
       sanitizeCartItems([
-        { productId: "p26", quantity: 15 },
-        { productId: "p26", quantity: 15 },
-        { productId: "p01", quantity: 2.7 },
+        { productId: "p24", quantity: 15 },
+        { productId: "p24", quantity: 15 },
+        { productId: "p02", quantity: 2.7 },
       ])
     ).toEqual([
-      { productId: "p26", optionLabel: undefined, quantity: 20 },
-      { productId: "p01", optionLabel: undefined, quantity: 2 },
+      { productId: "p24", optionLabel: undefined, quantity: 25 },
+      { productId: "p02", optionLabel: undefined, quantity: 2 },
     ]);
+  });
+  it("품절 상품은 '품절'로 보여 주려고 남기되 주문 대상에서는 뺀다", () => {
+    const items = sanitizeCartItems([
+      { productId: "p05", quantity: 2 },
+      { productId: "p02", quantity: 1 },
+    ]);
+    expect(items).toHaveLength(2);
+    expect(maxQuantityFor("p05")).toBe(0);
+    expect(orderableItems(items).map((i) => i.productId)).toEqual(["p02"]);
   });
 });
 

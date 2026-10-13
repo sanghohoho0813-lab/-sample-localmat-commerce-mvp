@@ -1,22 +1,20 @@
 import type { ProductBadge } from "@/lib/types";
 
-const styles: Record<ProductBadge, string> = {
-  제철: "bg-tangerine-600 text-white",
-  산지직송: "bg-leaf-600 text-white",
-  당일수확: "bg-leaf-100 text-leaf-700",
-  무농약: "bg-leaf-100 text-leaf-700",
-  유기농: "bg-leaf-100 text-leaf-700",
-  동물복지: "bg-cream-200 text-bark-600",
-  무항생제: "bg-cream-200 text-bark-600",
-  "1등급": "bg-cream-200 text-bark-600",
-  NEW: "bg-tangerine-100 text-tangerine-700",
-  베스트: "bg-bark-800 text-white",
+/**
+ * 사진 위 작은 표식 — 색을 줄여 사진이 주인공이 되게 합니다.
+ * 인증·특징은 흰 바탕, '베스트'만 짙게, 'NEW'만 포인트 색.
+ */
+const styles: Partial<Record<ProductBadge, string>> = {
+  베스트: "bg-bark-900/90 text-white",
+  NEW: "bg-white/95 text-tangerine-700",
 };
 
 export default function Badge({ label }: { label: ProductBadge }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-1 text-[14px] font-bold leading-4 ${styles[label]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[14px] font-semibold leading-4 shadow-sm backdrop-blur-sm ${
+        styles[label] ?? "bg-white/95 text-bark-800"
+      }`}
     >
       {label}
     </span>

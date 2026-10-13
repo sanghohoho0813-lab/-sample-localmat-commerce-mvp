@@ -15,7 +15,8 @@ create table categories (
   id text primary key,
   slug text unique not null,
   name text not null,
-  emoji text
+  emoji text,
+  cover_url text
 );
 
 create table farms (
@@ -49,12 +50,20 @@ create table products (
   badges text[] not null default '{}',
   stock int not null default 0,
   sales_count int not null default 0,
-  is_seasonal boolean not null default false,
-  options jsonb,
+  -- 출하 월(1~12). 빈 배열이면 연중. 제철이 지난 상품은 stock 0 + restock_note로 남겨 둡니다.
+  season smallint[] not null default '{}',
+  restock_note text,
+  harvest text not null,            -- 카드용 짧은 수확 문구 ("3일 숙성 출고")
+  harvest_detail text not null,
+  packaging text not null,
+  temp text not null check (temp in ('냉장', '냉동', '상온')),
+  amount text not null,             -- 실제 크기와 양 ("S~M 크기 30~40과")
+  lead_days smallint not null default 0, -- 주문 후 수확·도정 등 출고 준비일
+  repurchase_rate numeric(3,2) not null default 0,
+  options jsonb,                    -- [{ label, extraPrice, note }]
   summary text,
   description text[],
   storage_tip text,
-  shipping_note text,
   image_url text,
   created_at timestamptz not null default now()
 );
@@ -85,6 +94,7 @@ create table orders (
   phone text not null,
   address text not null,
   request_note text,
+  ship_date date,
   expected_delivery date,
   created_at timestamptz not null default now()
 );
@@ -106,6 +116,7 @@ create table reviews (
   user_id uuid references users(id),
   author text not null,
   rating int not null check (rating between 1 and 5),
+  option_label text,
   content text not null,
   created_at timestamptz not null default now()
 );

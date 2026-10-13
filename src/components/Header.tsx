@@ -64,7 +64,6 @@ function CategoryNav() {
                     : "font-medium text-bark-600 hover:bg-cream-100 hover:text-leaf-700"
                 }`}
               >
-                <span aria-hidden>{c.emoji}</span>
                 {c.name}
               </Link>
             );

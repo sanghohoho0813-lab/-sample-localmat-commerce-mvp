@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { CartItem, Order, Review } from "@/lib/types";
 import { demoUser, seedOrders } from "@/lib/data/etc";
+import { getProduct } from "@/lib/data/products";
 import { withLiveDates } from "@/lib/orders";
 import {
   cartKey,
@@ -35,6 +36,17 @@ export interface AddResult {
   quantity: number;
   /** 재고 한도 때문에 요청한 만큼 다 담지 못했는지 */
   capped: boolean;
+  /** 품절이라 담지 못했는지 */
+  soldOut: boolean;
+}
+
+export interface ReorderResult {
+  /** 다시 담은 상품 수 */
+  added: number;
+  /** 품절이라 못 담은 상품 이름 */
+  soldOut: string[];
+  /** 재고 한도로 수량을 줄여 담은 상품 이름 */
+  capped: string[];
 }
 
 interface CartState {
@@ -44,6 +56,10 @@ interface CartState {
   removeItem: (productId: string, optionLabel?: string) => void;
   /** 삭제 되돌리기 — 원래 자리에 다시 넣습니다. */
   restoreItem: (item: CartItem, index: number) => void;
+  /** 옵션 바꾸기 — 바꾼 옵션이 이미 담겨 있으면 수량을 합칩니다(재고 한도 안에서). */
+  changeOption: (productId: string, from: string | undefined, to: string) => void;
+  /** 지난 주문 다시 담기 */
+  reorder: (items: readonly CartItem[]) => ReorderResult;
   clear: () => void;
 }
 
@@ -53,6 +69,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       addItem: (productId, quantity, optionLabel) => {
         const max = maxQuantityFor(productId);
+        if (max === 0) return { quantity: 0, capped: true, soldOut: true };
         const key = cartKey(productId, optionLabel);
         const current = get().items.find((i) => cartKey(i.productId, i.optionLabel) === key);
         const wanted = (current?.quantity ?? 0) + quantity;
@@ -64,13 +81,13 @@ export const useCartStore = create<CartState>()(
               )
             : [...state.items, { productId, optionLabel, quantity: next }],
         }));
-        return { quantity: next, capped: wanted > max };
+        return { quantity: next, capped: wanted > max, soldOut: false };
       },
       updateQuantity: (productId, optionLabel, quantity) =>
         set((state) => ({
           items: state.items.map((i) =>
             cartKey(i.productId, i.optionLabel) === cartKey(productId, optionLabel)
-              ? { ...i, quantity: Math.max(1, Math.min(quantity, maxQuantityFor(productId))) }
+              ? { ...i, quantity: Math.max(1, Math.min(quantity, maxQuantityFor(productId) || i.quantity)) }
               : i
           ),
         })),
@@ -89,6 +106,38 @@ export const useCartStore = create<CartState>()(
           items.splice(Math.min(index, items.length), 0, item);
           return { items };
         }),
+      changeOption: (productId, from, to) =>
+        set((state) => {
+          const fromKey = cartKey(productId, from);
+          const moving = state.items.find((i) => cartKey(i.productId, i.optionLabel) === fromKey);
+          if (!moving || from === to) return state;
+          const toKey = cartKey(productId, to);
+          const existing = state.items.find((i) => cartKey(i.productId, i.optionLabel) === toKey);
+          if (existing) {
+            const quantity = Math.min(existing.quantity + moving.quantity, maxQuantityFor(productId) || existing.quantity);
+            return {
+              items: state.items
+                .filter((i) => cartKey(i.productId, i.optionLabel) !== fromKey)
+                .map((i) => (cartKey(i.productId, i.optionLabel) === toKey ? { ...i, quantity } : i)),
+            };
+          }
+          return {
+            items: state.items.map((i) => (cartKey(i.productId, i.optionLabel) === fromKey ? { ...i, optionLabel: to } : i)),
+          };
+        }),
+      reorder: (items) => {
+        const result: ReorderResult = { added: 0, soldOut: [], capped: [] };
+        for (const item of items) {
+          const name = getProduct(item.productId)?.name ?? "상품";
+          const r = get().addItem(item.productId, item.quantity, item.optionLabel);
+          if (r.soldOut) result.soldOut.push(name);
+          else {
+            result.added += 1;
+            if (r.capped) result.capped.push(name);
+          }
+        }
+        return result;
+      },
       clear: () => set({ items: [] }),
     }),
     {

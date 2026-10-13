@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFarm } from "@/lib/data/farms";
 import { getProduct, products } from "@/lib/data/products";
+import { currentMonth } from "@/lib/season";
 import { SITE_URL } from "@/lib/site";
 import ProductDetailClient from "./ProductDetailClient";
+
+// 정적으로 만들되 한 시간마다 다시 그려 '지금 제철'·추천 근거가 날짜에 맞게 바뀝니다.
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
@@ -53,7 +57,7 @@ export default async function ProductDetailPage({
       "@type": "Offer",
       priceCurrency: "KRW",
       price: product.price,
-      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
       url: `${SITE_URL}/products/${product.slug}`,
     },
   };
@@ -65,7 +69,7 @@ export default async function ProductDetailPage({
         // JSON 안의 "<"를 이스케이프해 문자열이 스크립트 태그를 닫지 못하게 합니다.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <ProductDetailClient product={product} />
+      <ProductDetailClient product={product} month={currentMonth()} />
     </>
   );
 }

@@ -5,6 +5,7 @@ const pages = [
   "/",
   "/products",
   "/products/nonsan-ttalgi-gift",
+  "/products/jeju-gamgyul",
   "/cart",
   "/checkout",
   "/orders",
@@ -19,6 +20,8 @@ const widths = [320, 360, 390, 414, 768, 1024, 1280];
 // 긴 상품명·옵션이 담긴 '최악의' 장바구니로 모든 폭에서 가로 넘침이 없는지 봅니다.
 test.describe("반응형", () => {
   test.skip(({ isMobile }) => isMobile, "폭별 컨텍스트를 직접 만들므로 한 번만 실행");
+  // 한 테스트에서 화면 12개를 차례로 열어 보므로 기본 30초보다 넉넉하게
+  test.describe.configure({ timeout: 90_000 });
 
   for (const width of widths) {
     test(`${width}px — 가로로 넘치지 않는다`, async ({ browser }) => {
@@ -36,7 +39,8 @@ test.describe("반응형", () => {
           JSON.stringify({
             state: {
               items: [
-                { productId: "p26", quantity: 20 },
+                { productId: "p26", quantity: 20 }, // 품절 상품도 장바구니에 남아 있는 경우
+                { productId: "p06", optionLabel: "5kg", quantity: 2 },
                 { productId: "p09", optionLabel: "구이용 (두께 1.5cm)", quantity: 2 },
                 { productId: "p24", quantity: 3 },
               ],

@@ -1,7 +1,18 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const pages = ["/", "/products", "/products/nonsan-ttalgi", "/cart", "/farms/nonsan-ttalgi", "/search?q=딸기", "/orders", "/mypage"];
+const pages = [
+  "/",
+  "/products",
+  "/products/jeju-gamgyul",
+  "/products/nonsan-ttalgi",
+  "/cart",
+  "/farms/nonsan-ttalgi",
+  "/search?q=딸기",
+  "/orders",
+  "/order-complete/seed-o05",
+  "/mypage",
+];
 
 for (const path of pages) {
   test(`접근성(axe, WCAG 2.1 AA) — ${path}`, async ({ page }) => {

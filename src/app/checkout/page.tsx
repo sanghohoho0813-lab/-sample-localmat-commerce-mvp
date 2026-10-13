@@ -3,16 +3,22 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Banknote, Check, CreditCard, Loader2, MapPin, Smartphone, Ticket } from "lucide-react";
+import { Banknote, Check, ChevronDown, CreditCard, Loader2, Smartphone } from "lucide-react";
+import { EtaLine } from "@/components/DeliveryEta";
+import FarmGroupHeader from "@/components/FarmGroupHeader";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
 import { addresses, demoUser } from "@/lib/data/etc";
 import { getProduct } from "@/lib/data/products";
-import { expectedDeliveryDate, formatWon, itemLabel, makeOrderNumber } from "@/lib/format";
+import { groupByFarm } from "@/lib/catalog";
+import { planForProducts } from "@/lib/delivery";
+import { formatWon, itemLabel, makeOrderNumber } from "@/lib/format";
+import { isoDate } from "@/lib/kst";
+import { orderableItems } from "@/lib/persisted";
 import { couponOptions, summarize, unitPrice } from "@/lib/pricing";
 import { useBuyNowStore, useCartStore, useOrderStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
-import type { CartItem, Order, PaymentMethod } from "@/lib/types";
+import type { CartItem, Order, PaymentMethod, Product } from "@/lib/types";
 
 // 라벨을 네 글자로 맞춰 좁은 폰에서도 세 칸이 한 줄에 들어갑니다.
 const paymentMethods: { value: PaymentMethod; label: string; icon: typeof CreditCard }[] = [
@@ -50,11 +56,16 @@ function Checkout() {
   const buyNowMode = useSearchParams().get("mode") === "now";
 
   const cartItems = useCartStore((s) => s.items);
-  const clearCart = useCartStore((s) => s.clear);
+  const removeFromCart = useCartStore((s) => s.removeItem);
   const buyNowItem = useBuyNowStore((s) => s.item);
   const clearBuyNow = useBuyNowStore((s) => s.set);
   const addOrder = useOrderStore((s) => s.addOrder);
-  const items = buyNowMode ? (buyNowItem ? [buyNowItem] : []) : cartItems;
+  // 품절·시즌 준비 중인 상품은 장바구니에 남겨 두고 주문에서는 뺍니다.
+  const items = useMemo(
+    () => orderableItems(buyNowMode ? (buyNowItem ? [buyNowItem] : []) : cartItems),
+    [buyNowMode, buyNowItem, cartItems]
+  );
+  const [itemsOpen, setItemsOpen] = useState(false);
 
   const [addressId, setAddressId] = useState(addresses.find((a) => a.isDefault)!.id);
   const [addressOpen, setAddressOpen] = useState(false);
@@ -79,7 +90,7 @@ function Checkout() {
 
   const couponId = pickedCouponId ?? usableCoupons[0]?.coupon.id ?? "";
   const { itemsTotal, shippingFee, couponDiscount, total } = summarize(visibleItems, couponId || null);
-  const delivery = expectedDeliveryDate(1);
+  const orderProducts = visibleItems.map((i) => getProduct(i.productId)).filter((p): p is Product => !!p);
   const address = addresses.find((a) => a.id === addressId)!;
   const isCustomRequest = requestChoice === CUSTOM_REQUEST;
 
@@ -130,7 +141,11 @@ function Checkout() {
       phone: address.phone,
       address: `${address.address1} ${address.address2}`,
       requestNote: isCustomRequest ? customRequest.trim() : requestChoice,
-      expectedDelivery: delivery.iso,
+      // 실제 출고 규칙(오후 2시 마감·냉장은 금요일 출고 없음·준비일)으로 계산한 일정 — 가장 늦은 농가 기준
+      ...(() => {
+        const plan = planForProducts(orderProducts, now)!;
+        return { shipDate: isoDate(plan.shipDate), expectedDelivery: isoDate(plan.arriveDate) };
+      })(),
     };
 
     // Demo checkout: 실제 PG 대신 짧은 지연 후 주문 생성 → 장바구니 비우기
@@ -138,7 +153,7 @@ function Checkout() {
       addOrder(order);
       // 바로 구매는 장바구니에 담아 둔 다른 상품을 그대로 둡니다.
       if (buyNowMode) clearBuyNow(null);
-      else clearCart();
+      else order.items.forEach((i) => removeFromCart(i.productId, i.optionLabel));
       router.replace(`/order-complete/${order.id}`);
     }, 900);
   }
@@ -164,11 +179,8 @@ function Checkout() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <div className="space-y-4">
           {/* 배송지 */}
-          <section className="rounded-card border border-bark-100 bg-white p-5">
-            <h2 className="flex items-center gap-1.5 text-base font-extrabold text-bark-900">
-              <MapPin className="h-4 w-4 text-leaf-600" />
-              배송지
-            </h2>
+          <section className="rounded-2xl bg-white p-4 sm:p-5">
+            <StepTitle n={1}>배송 정보</StepTitle>
             {/* 기본은 선택된 배송지 한 곳만 — 바꿀 때만 목록을 펼칩니다. */}
             {!addressOpen ? (
               <div className="mt-3 flex items-start justify-between gap-3">
@@ -185,7 +197,7 @@ function Checkout() {
                     {address.address1} {address.address2}
                   </p>
                   <p className="mt-1 text-sm text-bark-400">
-                    {address.recipient} · {address.phone}
+                    {address.recipient} · <span className="whitespace-nowrap">{address.phone}</span>
                   </p>
                 </div>
                 <button
@@ -230,7 +242,7 @@ function Checkout() {
                       {a.address1} {a.address2}
                     </p>
                     <p className="mt-1 text-sm text-bark-400">
-                      {a.recipient} · {a.phone}
+                      {a.recipient} · <span className="whitespace-nowrap">{a.phone}</span>
                     </p>
                   </button>
                 ))}
@@ -295,52 +307,79 @@ function Checkout() {
             </p>
           </section>
 
-          {/* 주문 상품 */}
-          <section className="rounded-card border border-bark-100 bg-white p-5">
-            <h2 className="text-base font-extrabold text-bark-900">
-              주문 상품 <span className="text-leaf-700">{visibleItems.length}</span>
-            </h2>
-            <ul className="mt-3 divide-y divide-bark-100">
-              {visibleItems.map((item) => {
-                const product = getProduct(item.productId);
-                if (!product) return null;
-                const label = itemLabel(product.name, product.unit, item.optionLabel);
-                return (
-                  <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-3 py-3">
-                    <ProductImage
-                      product={product}
-                      className="w-14 shrink-0 rounded-lg border border-bark-100"
-                      iconSize="text-xl"
-                      sizes="56px"
-                    />
-                    {/* 이름은 두 줄까지 온전히, 옵션·수량과 금액은 아래 한 줄에 */}
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-medium leading-snug text-bark-800">{label.title}</p>
-                      <div className="mt-1 flex items-baseline justify-between gap-3">
-                        <p className="min-w-0 truncate text-sm text-bark-400">
-                          {label.option ? `${label.option} · ` : ""}
-                          {item.quantity}개
-                        </p>
-                        <p className="shrink-0 text-sm font-bold text-bark-900">
-                          {formatWon(unitPrice(item) * item.quantity)}
-                        </p>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="mt-2 rounded-xl bg-leaf-50 px-3.5 py-2.5 text-sm text-leaf-800">
-              오늘 주문하면 <b>{delivery.label}</b> 도착 예정이에요.
+          {/* 주문 상품 — 농가별 묶음. 상품이 많으면 접어 두고 요약만 */}
+          <section className="rounded-2xl bg-white p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <StepTitle n={2}>
+                주문 상품 <span className="text-leaf-700">{visibleItems.length}</span>
+              </StepTitle>
+              {visibleItems.length > 3 && (
+                <button
+                  type="button"
+                  aria-expanded={itemsOpen}
+                  onClick={() => setItemsOpen((v) => !v)}
+                  className="flex h-10 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-bark-600 hover:bg-cream-100"
+                >
+                  {itemsOpen ? "접기" : "모두 보기"}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${itemsOpen ? "rotate-180" : ""}`} />
+                </button>
+              )}
+            </div>
+            <p className="mt-1.5 text-sm text-bark-600">
+              <EtaLine products={orderProducts} />
             </p>
+            {visibleItems.length > 3 && !itemsOpen ? (
+              <p className="mt-3 truncate rounded-xl bg-cream-100 px-4 py-3 text-[15px] text-bark-700">
+                {itemLabel(orderProducts[0]?.name ?? "", orderProducts[0]?.unit ?? "", visibleItems[0]?.optionLabel).title} 외{" "}
+                {visibleItems.length - 1}개 · 농가 {groupByFarm(visibleItems).length}곳
+              </p>
+            ) : (
+              <div className="mt-3 space-y-4">
+                {groupByFarm(visibleItems).map((group) => {
+                  const groupProducts = group.items
+                    .map((i) => getProduct(i.productId))
+                    .filter((p): p is Product => !!p);
+                  return (
+                    <div key={group.farmId} className="rounded-xl border border-bark-100 px-3 pt-3 sm:px-4">
+                      <FarmGroupHeader farmId={group.farmId} products={groupProducts} />
+                      <ul className="divide-y divide-bark-100">
+                        {group.items.map((item) => {
+                          const product = getProduct(item.productId);
+                          if (!product) return null;
+                          const label = itemLabel(product.name, product.unit, item.optionLabel);
+                          return (
+                            <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-3 py-3">
+                              <ProductImage
+                                product={product}
+                                className="w-14 shrink-0 rounded-lg"
+                                iconSize="text-xl"
+                                sizes="56px"
+                              />
+                              {/* 이름은 두 줄까지 온전히, 옵션은 따로 한 줄, 수량과 금액은 맨 아래 한 줄에 */}
+                              <div className="min-w-0 flex-1">
+                                <p className="line-clamp-2 text-sm font-medium leading-snug text-bark-800">{label.title}</p>
+                                {label.option && <p className="mt-0.5 truncate text-sm text-bark-500">{label.option}</p>}
+                                <div className="mt-1 flex items-baseline justify-between gap-3">
+                                  <p className="shrink-0 text-sm text-bark-500">{item.quantity}개</p>
+                                  <p className="shrink-0 text-sm font-bold text-bark-900">
+                                    {formatWon(unitPrice(item) * item.quantity)}
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           {/* 쿠폰 — 쓸 수 있는 쿠폰만, 할인 금액이 큰 순서로 */}
-          <section className="rounded-card border border-bark-100 bg-white p-5">
-            <h2 className="flex items-center gap-1.5 text-base font-extrabold text-bark-900">
-              <Ticket className="h-4 w-4 text-tangerine-500" />
-              쿠폰
-            </h2>
+          <section className="rounded-2xl bg-white p-4 sm:p-5">
+            <StepTitle n={3}>할인</StepTitle>
             {usableCoupons.length === 0 ? (
               // 쓸 수 있는 쿠폰이 없으면 고를 것도 없으니, 얼마를 더 담으면 쓸 수 있는지만 알려 줍니다.
               <p className="mt-2.5 text-[16px] text-bark-600">
@@ -399,8 +438,8 @@ function Checkout() {
           </section>
 
           {/* 결제수단 */}
-          <section className="rounded-card border border-bark-100 bg-white p-5">
-            <h2 className="text-base font-extrabold text-bark-900">결제수단</h2>
+          <section className="rounded-2xl bg-white p-4 sm:p-5">
+            <StepTitle n={4}>결제 수단</StepTitle>
             <div className="mt-3 grid grid-cols-3 gap-2" role="radiogroup" aria-label="결제수단">
               {paymentMethods.map(({ value, label, icon: Icon }) => (
                 <button
@@ -425,7 +464,7 @@ function Checkout() {
 
         {/* Summary */}
         <div className="lg:sticky lg:top-32">
-          <div className="rounded-card border border-bark-100 bg-white p-5">
+          <div className="rounded-2xl bg-white p-4 sm:p-5">
             <h2 className="mb-4 text-base font-extrabold text-bark-900">결제 금액</h2>
             <PriceSummary itemsTotal={itemsTotal} shippingFee={shippingFee} couponDiscount={couponDiscount} />
             <button
@@ -474,5 +513,17 @@ function Checkout() {
         </button>
       </div>
     </div>
+  );
+}
+
+/** 주문서 단계 제목 — 번호로 순서를 보여 줘 정보가 많아도 어디까지 왔는지 알 수 있게 */
+function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-base font-extrabold text-bark-900">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-leaf-700 text-[13px] font-bold text-white" aria-hidden>
+        {n}
+      </span>
+      {children}
+    </h2>
   );
 }

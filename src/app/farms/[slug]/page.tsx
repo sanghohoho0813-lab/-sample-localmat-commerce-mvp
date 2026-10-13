@@ -6,6 +6,7 @@ import FarmImage from "@/components/FarmImage";
 import ProductCard from "@/components/ProductCard";
 import { farms, getFarm } from "@/lib/data/farms";
 import { products } from "@/lib/data/products";
+import { availableFirst } from "@/lib/catalog";
 
 export function generateStaticParams() {
   return farms.map((f) => ({ slug: f.slug }));
@@ -37,7 +38,7 @@ export default async function FarmDetailPage({
   const farm = getFarm(slug);
   if (!farm) notFound();
 
-  const farmProducts = products.filter((p) => p.farmId === farm.id);
+  const farmProducts = availableFirst(products.filter((p) => p.farmId === farm.id));
 
   return (
     <div className="pb-8">

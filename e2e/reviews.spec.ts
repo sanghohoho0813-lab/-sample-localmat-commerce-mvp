@@ -21,6 +21,9 @@ test("배송 완료 주문에 리뷰를 쓰면 상품 상세에 내 리뷰로 �
 
   await page.getByRole("link", { name: "확인하기" }).click();
   await expect(page).toHaveURL(/#reviews$/);
-  await expect(page.getByRole("tab", { name: /리뷰/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#reviews")).toBeInViewport();
   await expect(page.getByText("내 리뷰")).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "상품 상세 구역" }).getByRole("link", { name: /후기/ })
+  ).toHaveAttribute("aria-current", "true");
 });

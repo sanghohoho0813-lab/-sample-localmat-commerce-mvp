@@ -1,3 +1,5 @@
+import { kstNow } from "@/lib/kst";
+
 export function formatPrice(value: number): string {
   return value.toLocaleString("ko-KR");
 }
@@ -11,29 +13,18 @@ export function discountRate(price: number, originalPrice?: number): number | nu
   return Math.round(((originalPrice - price) / originalPrice) * 100);
 }
 
+/** 주문일 등 — 사용자 기기 시간대가 아니라 한국 날짜로(자정 무렵 주문도 진행 단계 날짜와 어긋나지 않게) */
 export function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
-    d.getDate()
-  ).padStart(2, "0")}`;
+  const { date } = kstNow(new Date(iso));
+  return `${date.y}.${String(date.m).padStart(2, "0")}.${String(date.d).padStart(2, "0")}`;
 }
 
-const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
-
-export function expectedDeliveryDate(daysFromNow = 1): { iso: string; label: string } {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  // Skip Sunday for delivery
-  if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-  const iso = d.toISOString().slice(0, 10);
-  const label = `${d.getMonth() + 1}/${d.getDate()}(${DAY_NAMES[d.getDay()]})`;
-  return { iso, label };
-}
-
+/** 주문번호 — 날짜 부분은 한국 날짜(LM20261014-1234) */
 export function makeOrderNumber(now: Date): string {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  const { date } = kstNow(now);
+  const y = date.y;
+  const m = String(date.m).padStart(2, "0");
+  const day = String(date.d).padStart(2, "0");
   const seq = String(Math.floor((now.getTime() / 1000) % 10000)).padStart(4, "0");
   return `LM${y}${m}${day}-${seq}`;
 }
