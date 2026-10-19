@@ -74,7 +74,7 @@ export default function ReviewModal({
         className="relative flex max-h-full w-full max-w-md flex-col overflow-y-auto rounded-3xl bg-white p-5 shadow-lift animate-fade-up md:p-6"
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id={titleId} className="text-lg font-extrabold text-bark-900">
+          <h2 id={titleId} className="text-lg font-bold text-bark-900">
             리뷰 쓰기
           </h2>
           <button

@@ -57,7 +57,7 @@ export default function CartPage() {
   if (!hydrated) {
     return (
       <div className="container-page py-6 md:py-8" aria-busy="true">
-        <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">장바구니</h1>
+        <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">장바구니</h1>
         <div className="h-48 animate-pulse rounded-2xl bg-white/70" />
       </div>
     );
@@ -82,7 +82,7 @@ export default function CartPage() {
 
   return (
     <div className="container-page py-6 md:py-8">
-      <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
+      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
         장바구니 <span className="text-bark-400">{visibleItems.length}</span>
       </h1>
 
@@ -91,14 +91,14 @@ export default function CartPage() {
           {orderable.length > 0 && <FreeShippingBar itemsTotal={itemsTotal} />}
 
           {soldOutCount > 0 && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-bark-900 px-4 py-3 text-white" role="status">
-              <p className="text-sm">
-                <b>품절·시즌 준비 중인 상품 {soldOutCount}개</b>는 주문에서 빠져요.
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-bark-200 bg-white px-4 py-3" role="status">
+              <p className="text-sm text-bark-600">
+                <b className="font-semibold text-bark-900">품절·시즌 준비 중인 상품 {soldOutCount}개</b>는 주문에서 빠져요.
               </p>
               <button
                 type="button"
                 onClick={() => visibleItems.filter((i) => !orderable.includes(i)).forEach((i) => removeItem(i.productId, i.optionLabel))}
-                className="h-9 shrink-0 rounded-lg bg-white/15 px-3 text-sm font-semibold hover:bg-white/25"
+                className="h-9 shrink-0 rounded-lg bg-cream-100 px-3 text-sm font-semibold text-bark-700 hover:bg-cream-200"
               >
                 모두 삭제
               </button>
@@ -188,7 +188,7 @@ export default function CartPage() {
                                   max={max}
                                   onChange={(q) => updateQuantity(item.productId, item.optionLabel, q)}
                                 />
-                                <p className="ml-auto text-base font-extrabold text-bark-900">
+                                <p className="ml-auto text-base font-bold text-bark-900">
                                   {formatWon(unitPriceOf(item) * item.quantity)}
                                 </p>
                               </div>
@@ -216,7 +216,7 @@ export default function CartPage() {
         {/* 주문 요약 */}
         <aside className="lg:sticky lg:top-32" aria-label="주문 요약">
           <div className="rounded-2xl bg-white p-5">
-            <h2 className="text-base font-extrabold text-bark-900">주문 요약</h2>
+            <h2 className="text-base font-bold text-bark-900">주문 요약</h2>
             <dl className="mt-4 space-y-2.5 text-[15px]">
               <div className="flex justify-between text-bark-600">
                 <dt>상품금액</dt>
@@ -246,7 +246,7 @@ export default function CartPage() {
               </div>
               <div className="flex items-baseline justify-between border-t border-bark-100 pt-3">
                 <dt className="font-bold text-bark-900">예상 결제 금액</dt>
-                <dd className="text-xl font-extrabold text-tangerine-700">{formatWon(expected.total)}</dd>
+                <dd className="text-xl font-bold text-tangerine-700">{formatWon(expected.total)}</dd>
               </div>
             </dl>
             {orderableProducts.length > 0 && (
@@ -270,7 +270,7 @@ export default function CartPage() {
       {/* 함께 담으면 좋은 상품 — 추천마다 근거(무료배송 완성·짝·같은 농가)를 붙입니다 */}
       {suggestions.length > 0 && (
         <section className="mt-12 border-t border-bark-100 pt-8 md:mt-16" aria-labelledby="cart-suggest-title">
-          <h2 id="cart-suggest-title" className="mb-1 text-lg font-extrabold text-bark-900 md:text-2xl">
+          <h2 id="cart-suggest-title" className="mb-1 text-lg font-bold text-bark-900 md:text-2xl">
             함께 담으면 좋은 상품
           </h2>
           <p className="mb-5 text-sm text-bark-500">

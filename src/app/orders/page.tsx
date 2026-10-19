@@ -44,7 +44,7 @@ export default function OrdersPage() {
 
   return (
     <div className="container-page max-w-3xl py-6 md:py-8">
-      <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
+      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
         주문 내역
       </h1>
 
@@ -154,7 +154,7 @@ export default function OrdersPage() {
                 <footer className="flex items-center justify-between gap-3 border-t border-bark-100 py-2.5 pl-5 pr-3">
                   <p className="text-[16px]">
                     <span className="text-bark-500">결제 금액</span>{" "}
-                    <span className="font-extrabold text-bark-900">{formatWon(order.totalAmount)}</span>
+                    <span className="font-bold text-bark-900">{formatWon(order.totalAmount)}</span>
                   </p>
                   <button
                     type="button"

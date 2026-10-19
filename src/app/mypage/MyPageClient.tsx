@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronRight, Clock, Heart, MapPin, Package, Ticket, User } from "lucide-react";
+import { ChevronRight, Clock, Heart, MapPin, Package, Ticket } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import ProductCard from "@/components/ProductCard";
 import { addresses, coupons, demoUser } from "@/lib/data/etc";
@@ -49,50 +49,54 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
   return (
     <div className="container-page max-w-4xl py-6 md:py-8">
       <h1 className="sr-only">마이페이지</h1>
-      {/* Profile */}
-      <div className="flex items-center gap-4 rounded-card bg-gradient-to-br from-leaf-700 to-leaf-600 p-6 text-white">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20">
-          <User className="h-7 w-7" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold">
-            {demoUser.company}
+      {/* 프로필 + 바로가기 숫자 — 한 장의 카드로 묶어(상용 앱의 계정 화면처럼) 위계를 단순하게 */}
+      <section className="overflow-hidden rounded-2xl bg-white" aria-label="내 정보">
+        <div className="flex items-center gap-4 p-5 md:p-6">
+          <span
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-xl font-bold text-white"
+            aria-hidden
+          >
+            {demoUser.shortName.slice(0, 1)}
           </span>
-          <p className="mt-1 text-lg font-extrabold">{demoUser.shortName}님, 반가워요 🌿</p>
-          <p className="mt-0.5 truncate text-[16px] text-leaf-100">{demoUser.email}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-leaf-700">{demoUser.company}</p>
+            <p className="text-lg font-bold leading-snug text-bark-900">{demoUser.shortName}님, 반가워요</p>
+            <p className="truncate text-sm text-bark-500">{demoUser.email}</p>
+          </div>
+          <Link
+            href="/orders"
+            className="hidden shrink-0 items-center gap-1 rounded-xl border border-bark-200 px-4 py-2.5 text-sm font-semibold text-bark-700 transition-colors hover:border-leaf-400 hover:text-leaf-700 sm:flex"
+          >
+            주문 내역
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
-        <Link
-          href="/orders"
-          className="hidden shrink-0 items-center gap-1 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white/25 sm:flex"
-        >
-          주문 내역
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
 
-      {/* Quick stats */}
-      <div className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
-        {[
-          { label: "주문 내역", value: mounted ? orders.length : 0, href: "/orders", icon: Package },
-          { label: "찜", value: mounted ? wishlistIds.length : 0, onClick: () => setTab("wishlist"), icon: Heart },
-          { label: "쿠폰", value: coupons.length, onClick: () => setTab("coupons"), icon: Ticket },
-        ].map(({ label, value, href, onClick, icon: Icon }) => {
-          const inner = (
-            <>
-              <Icon className="h-5 w-5 text-leaf-600" />
-              <span className="text-lg font-extrabold text-bark-900">{value}</span>
-              <span className="text-sm text-bark-500">{label}</span>
-            </>
-          );
-          const cls =
-            "flex flex-col items-center gap-1 rounded-card border border-bark-100 bg-white py-4 transition-colors duration-200 hover:border-leaf-300 tap-highlight-none";
-          return href ? (
-            <Link key={label} href={href} className={cls}>{inner}</Link>
-          ) : (
-            <button key={label} type="button" onClick={onClick} className={cls}>{inner}</button>
-          );
-        })}
-      </div>
+        <div className="grid grid-cols-3 divide-x divide-bark-100 border-t border-bark-100">
+          {[
+            { label: "주문 내역", value: mounted ? orders.length : 0, href: "/orders", icon: Package },
+            { label: "찜", value: mounted ? wishlistIds.length : 0, onClick: () => setTab("wishlist"), icon: Heart },
+            { label: "쿠폰", value: coupons.length, onClick: () => setTab("coupons"), icon: Ticket },
+          ].map(({ label, value, href, onClick, icon: Icon }) => {
+            const inner = (
+              <>
+                <span className="text-xl font-bold text-bark-900 tabular-nums">{value}</span>
+                <span className="flex items-center gap-1 text-sm text-bark-500">
+                  <Icon className="h-4 w-4 text-leaf-600" aria-hidden />
+                  {label}
+                </span>
+              </>
+            );
+            const cls =
+              "flex flex-col items-center gap-0.5 py-4 transition-colors duration-200 hover:bg-cream-50 tap-highlight-none focus-ring";
+            return href ? (
+              <Link key={label} href={href} className={cls}>{inner}</Link>
+            ) : (
+              <button key={label} type="button" onClick={onClick} className={cls}>{inner}</button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Tabs */}
       <div {...tabListProps} className="mt-6 grid grid-cols-4 border-b border-bark-100 sm:flex" aria-label="마이페이지">
@@ -147,7 +151,7 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
                   key={c.id}
                   className="relative overflow-hidden rounded-card border border-dashed border-tangerine-300 bg-tangerine-50 p-5"
                 >
-                  <p className="text-xl font-extrabold text-tangerine-600">
+                  <p className="text-xl font-bold text-tangerine-600">
                     {c.discountType === "percent" ? `${c.value}%` : formatWon(c.value)}
                   </p>
                   <p className="mt-1 text-[16px] font-bold text-bark-800">{c.name}</p>

@@ -5,6 +5,7 @@ import { Snowflake, Sun, Thermometer } from "lucide-react";
 import type { Product, ShippingTemp } from "@/lib/types";
 import { getFarm } from "@/lib/data/farms";
 import { EtaDate } from "@/components/DeliveryEta";
+import FarmImage from "@/components/FarmImage";
 
 const TEMP_ICON: Record<ShippingTemp, typeof Sun> = { 냉장: Thermometer, 냉동: Snowflake, 상온: Sun };
 
@@ -32,34 +33,39 @@ export default function FarmGroupHeader({
   const Icon = TEMP_ICON[temp];
   const orderable = products.filter((p) => p.stock > 0);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-bark-100 pb-3">
-      {farm ? (
-        <Link href={`/farms/${farm.slug}`} className="min-w-0 truncate text-[15px] font-bold text-bark-900 hover:text-leaf-700">
-          {farm.name}
-        </Link>
-      ) : (
-        <span className="text-[15px] font-bold text-bark-900">로컬맘</span>
-      )}
-      <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sm text-bark-600">
-        <span className="flex items-center gap-1.5">
-          <Icon className="h-4 w-4 text-leaf-700" aria-hidden />
-          {temp}
-        </span>
-        {(arrival || orderable.length > 0) && (
-          <>
-            <span className="text-bark-300" aria-hidden>
-              ·
-            </span>
-            <span className="whitespace-nowrap font-semibold text-leaf-800">
-              {arrival ?? (
-                <>
-                  <EtaDate products={orderable} /> 도착
-                </>
-              )}
-            </span>
-          </>
-        )}
+    <div className="flex items-center gap-3 border-b border-bark-100 pb-3">
+      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-cream-200" aria-hidden>
+        {farm && <FarmImage farm={farm} sizes="36px" />}
       </span>
+      <div className="min-w-0 flex-1 leading-tight">
+        {farm ? (
+          <Link href={`/farms/${farm.slug}`} className="block truncate text-[15px] font-bold text-bark-900 hover:text-leaf-700">
+            {farm.name}
+          </Link>
+        ) : (
+          <span className="block text-[15px] font-bold text-bark-900">로컬맘</span>
+        )}
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-bark-600">
+          <span className="inline-flex items-center gap-1">
+            <Icon className="h-3.5 w-3.5 text-leaf-700" aria-hidden />
+            {temp} 포장
+          </span>
+          {(arrival || orderable.length > 0) && (
+            <>
+              <span className="text-bark-300" aria-hidden>
+                ·
+              </span>
+              <span className="whitespace-nowrap font-semibold text-leaf-800">
+                {arrival ?? (
+                  <>
+                    <EtaDate products={orderable} /> 도착
+                  </>
+                )}
+              </span>
+            </>
+          )}
+        </p>
+      </div>
     </div>
   );
 }

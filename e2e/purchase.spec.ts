@@ -111,3 +111,19 @@ test("지난 주문을 같은 옵션으로 다시 담는다", async ({ page }) =
   await expect(page.getByRole("link", { name: "제주 노지 감귤 3kg" })).toBeVisible();
   await expect(page.getByRole("link", { name: "자연방사 유정란 15구" })).toBeVisible();
 });
+
+test("PC — 상세를 읽다가 오른쪽 구매 상자에서 옵션을 바꿔 담는다", async ({ page, isMobile }) => {
+  test.skip(isMobile, "PC 전용");
+  await page.goto("/products/jeju-gamgyul");
+  const box = page.getByRole("complementary", { name: "구매 요약" });
+  // 위쪽 구매 영역이 보이는 동안에는 같은 버튼이 두 번 보이지 않습니다
+  await expect(box.getByRole("button", { name: "바로 구매" })).toBeHidden();
+  await page.locator("#producer").scrollIntoViewIfNeeded();
+  await expect(box.getByRole("button", { name: "바로 구매" })).toBeVisible();
+  await box.getByRole("combobox").selectOption("5kg");
+  await expect(box).toContainText("23,900원");
+  await box.getByRole("button", { name: /담기/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: "장바구니에 담았어요" })).toBeVisible();
+  await page.goto("/cart");
+  await expect(page.getByRole("link", { name: "제주 노지 감귤 5kg" })).toBeVisible();
+});

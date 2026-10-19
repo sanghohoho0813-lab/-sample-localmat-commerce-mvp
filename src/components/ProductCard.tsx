@@ -94,8 +94,8 @@ export default function ProductCard({
         ) : (
           showFarm && <p className="truncate text-xs text-bark-500">{originLabel(product)}</p>
         )}
-        {/* 이름이 한 줄이어도 두 줄 높이를 잡아 둬서, 같은 줄 카드끼리 가격 위치가 맞습니다. */}
-        <h3 className="mt-1 line-clamp-2 min-h-[2.75em] text-sm font-semibold leading-snug text-bark-900 [word-break:keep-all]">
+        {/* 이름 바로 아래 가격 — 한 줄 이름 뒤에 빈 줄을 두면 모바일 2열에서 끊겨 보입니다. */}
+        <h3 className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-bark-900 [word-break:keep-all]">
           <Link
             href={`/products/${product.slug}`}
             className="outline-none focus-visible:ring-0 focus-visible:ring-offset-0 after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-leaf-500 focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-cream-100"
@@ -106,11 +106,11 @@ export default function ProductCard({
 
         <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
           {rate !== null && !soldOut && (
-            <span className="text-base font-extrabold text-tangerine-600">
+            <span className="text-base font-bold text-tangerine-600">
               {rate}%<span className="sr-only"> 할인</span>
             </span>
           )}
-          <span className={`text-base font-extrabold ${soldOut ? "text-bark-400" : "text-bark-900"}`}>
+          <span className={`text-base font-bold ${soldOut ? "text-bark-400" : "text-bark-900"}`}>
             {formatPrice(product.price)}
             <span className="text-sm font-bold">원</span>
           </span>

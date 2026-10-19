@@ -8,12 +8,15 @@ export default function QuantityStepper({
   min = 1,
   max = 99,
   size = "md",
+  announce = true,
 }: {
   value: number;
   onChange: (next: number) => void;
   min?: number;
   max?: number;
   size?: "sm" | "md";
+  /** 같은 수량을 두 곳에서 보여 줄 때(상세의 PC 고정 구매 상자) 한쪽만 바뀐 수량을 읽어 주도록 */
+  announce?: boolean;
 }) {
   const btn = size === "sm" ? "h-10 w-10" : "h-12 w-12";
   const label = size === "sm" ? "w-9 text-sm" : "w-12 text-base";
@@ -29,7 +32,7 @@ export default function QuantityStepper({
         <Minus className="h-4 w-4" />
       </button>
       {/* 스크린리더가 바뀐 수량을 읽어 줍니다 */}
-      <span aria-live="polite" aria-atomic="true" className={`${label} text-center font-bold text-bark-800 tabular-nums`}>
+      <span aria-live={announce ? "polite" : undefined} aria-atomic="true" className={`${label} text-center font-bold text-bark-800 tabular-nums`}>
         {value}
         <span className="sr-only">개</span>
       </span>

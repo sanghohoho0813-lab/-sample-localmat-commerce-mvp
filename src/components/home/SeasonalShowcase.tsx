@@ -17,7 +17,7 @@ export default function SeasonalShowcase({ month, items }: { month: number; item
       <div className="mb-4 flex items-end justify-between gap-3 md:mb-6">
         <div>
           <p className="text-sm font-semibold text-leaf-700">지금 출하 중</p>
-          <h2 id="seasonal-title" className="mt-0.5 text-xl font-extrabold tracking-tight text-bark-900 md:text-2xl">
+          <h2 id="seasonal-title" className="mt-0.5 text-xl font-bold tracking-tight text-bark-900 md:text-2xl">
             {month}월 제철 장보기
           </h2>
         </div>
@@ -54,7 +54,7 @@ export default function SeasonalShowcase({ month, items }: { month: number; item
               <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-bark-900 [word-break:keep-all] group-hover:text-leaf-800">
                 {p.name} <span className="font-normal text-bark-500">{p.unit}</span>
               </p>
-              <p className="mt-1 text-base font-extrabold text-bark-900">
+              <p className="mt-1 text-base font-bold text-bark-900">
                 {formatPrice(p.price)}
                 <span className="text-sm font-bold">원</span>
               </p>

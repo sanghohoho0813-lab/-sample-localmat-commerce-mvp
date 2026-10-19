@@ -14,14 +14,14 @@ export default function RepurchaseList({ items }: { items: Product[] }) {
     <section aria-labelledby="repurchase-title">
       <div className="mb-3 md:mb-4">
         <p className="text-sm font-semibold text-leaf-700">실패 없는 장보기</p>
-        <h2 id="repurchase-title" className="mt-0.5 text-xl font-extrabold tracking-tight text-bark-900 md:text-2xl">
+        <h2 id="repurchase-title" className="mt-0.5 text-xl font-bold tracking-tight text-bark-900 md:text-2xl">
           다시 찾는 상품
         </h2>
       </div>
       <ol className="divide-y divide-bark-100 rounded-2xl bg-white px-4 md:px-5">
         {items.map((p, i) => (
           <li key={p.id} className="relative flex items-center gap-2.5 py-3.5 sm:gap-3">
-            <span className="w-4 shrink-0 text-center text-base font-extrabold text-leaf-700 tabular-nums sm:w-5">{i + 1}</span>
+            <span className="w-4 shrink-0 text-center text-base font-bold text-leaf-700 tabular-nums sm:w-5">{i + 1}</span>
             <ProductImage product={p} className="w-14 shrink-0 rounded-xl sm:w-16" iconSize="text-xl" sizes="64px" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs">
@@ -35,7 +35,7 @@ export default function RepurchaseList({ items }: { items: Product[] }) {
               >
                 {p.name} <span className="font-normal text-bark-500">{p.unit}</span>
               </Link>
-              <p className="mt-0.5 text-sm font-extrabold text-bark-900">{formatPrice(p.price)}원</p>
+              <p className="mt-0.5 text-sm font-bold text-bark-900">{formatPrice(p.price)}원</p>
             </div>
             <QuickAddButton product={p} className="relative z-10" />
           </li>

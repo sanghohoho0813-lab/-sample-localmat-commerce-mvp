@@ -275,7 +275,7 @@ export default function ProductListClient({
 
   return (
     <div className="container-page py-6 md:py-8">
-      <h1 className="mb-4 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">{title}</h1>
+      <h1 className="mb-4 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">{title}</h1>
 
       <CategoryChips activeSlug={category?.slug} seasonalOnly={seasonalOnly} />
 
@@ -365,7 +365,7 @@ export default function ProductListClient({
       >
         <div className="flex max-h-[85dvh] w-full flex-col rounded-t-3xl bg-white animate-fade-up">
           <div className="flex items-center justify-between px-5 pb-2 pt-4">
-            <h2 className="text-lg font-extrabold text-bark-900">필터</h2>
+            <h2 className="text-lg font-bold text-bark-900">필터</h2>
             <button
               type="button"
               aria-label="닫기"

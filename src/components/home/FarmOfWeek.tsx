@@ -14,7 +14,7 @@ export default function FarmOfWeek({ farm, items }: { farm: Farm; items: Product
     <section aria-labelledby="farm-week-title">
       <div className="mb-3 md:mb-4">
         <p className="text-sm font-semibold text-leaf-700">이번 주 농가</p>
-        <h2 id="farm-week-title" className="mt-0.5 text-xl font-extrabold tracking-tight text-bark-900 md:text-2xl">
+        <h2 id="farm-week-title" className="mt-0.5 text-xl font-bold tracking-tight text-bark-900 md:text-2xl">
           {farm.name}
         </h2>
       </div>
@@ -45,7 +45,7 @@ export default function FarmOfWeek({ farm, items }: { farm: Farm; items: Product
                   </Link>
                   {/* 자리가 모자라면 수확 정보만 통째로 다음 줄로 */}
                   <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-sm">
-                    <span className="whitespace-nowrap font-extrabold text-bark-900">{formatPrice(p.price)}원</span>
+                    <span className="whitespace-nowrap font-bold text-bark-900">{formatPrice(p.price)}원</span>
                     <span className="whitespace-nowrap text-xs font-semibold text-leaf-700">{p.harvest}</span>
                   </p>
                 </div>

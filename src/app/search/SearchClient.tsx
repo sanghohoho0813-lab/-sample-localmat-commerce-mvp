@@ -44,19 +44,19 @@ export default function SearchClient({ query }: { query: string }) {
   return (
     <div className="container-page py-5 md:py-8">
       <div className="mx-auto max-w-xl md:hidden">
-        <SearchBar initialQuery={query} autoFocus={!query} />
+        <SearchBar initialQuery={query} autoFocus={!query} onCream />
       </div>
 
       {!query ? (
         <div className="mt-10 text-center md:mt-16">
-          <h1 className="text-xl font-extrabold text-bark-900">무엇을 찾고 계세요?</h1>
+          <h1 className="text-xl font-bold text-bark-900">무엇을 찾고 계세요?</h1>
           <p className="mt-2 text-bark-500">상품명, 지역, 농가 이름으로 찾을 수 있어요.</p>
           <p className="mb-3 mt-8 text-sm font-semibold text-bark-400">많이 찾는 검색어</p>
           <KeywordChips />
         </div>
       ) : (
         <>
-          <h1 className="mt-5 text-xl font-extrabold text-bark-900 md:mt-0 md:text-2xl">
+          <h1 className="mt-5 text-xl font-bold text-bark-900 md:mt-0 md:text-2xl">
             ‘<span className="text-leaf-700">{query}</span>’ 검색 결과{" "}
             <span className="text-bark-400">{totalCount}</span>
           </h1>

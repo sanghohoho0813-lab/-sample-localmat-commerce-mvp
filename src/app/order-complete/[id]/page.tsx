@@ -54,7 +54,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
       {/* 주문 내역에서 다시 열어 본 주문은 축하 화면 대신 담백한 주문 상세로 보여 줍니다. */}
       {!fresh ? (
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-bark-900 md:text-3xl">주문 상세</h1>
+          <h1 className="text-xl font-bold tracking-tight text-bark-900 md:text-3xl">주문 상세</h1>
           <p className="mt-1.5 text-[16px] text-bark-500">
             {formatDate(order.createdAt)} 주문 · {order.orderNumber}
           </p>
@@ -64,7 +64,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-leaf-100 animate-check-pop">
             <CheckCircle2 className="h-11 w-11 text-leaf-700" strokeWidth={1.8} />
           </span>
-          <h1 className="mt-5 text-xl font-extrabold tracking-tight text-bark-900 md:text-2xl">주문이 완료되었어요</h1>
+          <h1 className="mt-5 text-xl font-bold tracking-tight text-bark-900 md:text-2xl">주문이 완료되었어요</h1>
           <p className="mt-2 text-[16px] leading-relaxed text-bark-600">
             <b className="text-leaf-800">{arrival}</b>이에요. 농가에서 수확·포장해 바로 보내 드릴게요.
           </p>
@@ -76,14 +76,14 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
 
       <div className={`${fresh ? "mt-8" : "mt-5"} space-y-4`}>
         <section className="rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="progress-title">
-          <h2 id="progress-title" className="mb-4 text-base font-extrabold text-bark-900">
+          <h2 id="progress-title" className="mb-4 text-base font-bold text-bark-900">
             주문 진행
           </h2>
           <OrderTimeline order={order} />
         </section>
 
         <section className="rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="receiver-title">
-          <h2 id="receiver-title" className="text-base font-extrabold text-bark-900">
+          <h2 id="receiver-title" className="text-base font-bold text-bark-900">
             받는 분
           </h2>
           <p className="mt-2.5 flex items-start gap-1.5 text-[15px] text-bark-700">
@@ -98,7 +98,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         </section>
 
         <section className="rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="items-title">
-          <h2 id="items-title" className="text-base font-extrabold text-bark-900">
+          <h2 id="items-title" className="text-base font-bold text-bark-900">
             주문 상품 {order.items.length}개
           </h2>
           <div className="mt-3 space-y-4">
@@ -137,7 +137,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
         </section>
 
         <section className="rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="pay-title">
-          <h2 id="pay-title" className="mb-4 text-base font-extrabold text-bark-900">
+          <h2 id="pay-title" className="mb-4 text-base font-bold text-bark-900">
             결제 금액
           </h2>
           <PriceSummary itemsTotal={order.itemsTotal} shippingFee={order.shippingFee} couponDiscount={order.couponDiscount} />

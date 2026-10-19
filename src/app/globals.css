@@ -17,6 +17,14 @@ body {
   @apply bg-cream-100 text-bark-800 antialiased;
   overflow-x: hidden;
   word-break: keep-all;
+  /* Pretendard는 기본 자간이 넓은 편이라 한글 UI에서 살짝 좁혀야 단정해 보입니다. */
+  letter-spacing: -0.011em;
+}
+
+/* 제목은 한 단계 더 촘촘하게 */
+h1,
+h2 {
+  letter-spacing: -0.022em;
 }
 
 ::selection {

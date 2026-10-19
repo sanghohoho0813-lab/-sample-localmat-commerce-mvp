@@ -57,14 +57,16 @@ export default async function FarmDetailPage({
           <h1 className="text-xl font-bold leading-snug md:text-3xl [text-wrap:balance]">
             “{farm.quote}”
           </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-leaf-100">
-            <span className="font-bold text-white">{farm.name}</span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" /> {farm.region}
-            </span>
+          {/* 농가명 한 줄, 지역·대표·연차 한 줄 — 좁은 화면에서 항목이 제각각 줄바꿈되지 않게 */}
+          <p className="mt-4 text-[16px] font-bold text-white">{farm.name}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-white/80">
+            <MapPin className="h-3.5 w-3.5" aria-hidden />
+            <span>{farm.region}</span>
+            <span aria-hidden>·</span>
             <span>{farm.owner} 대표</span>
+            <span aria-hidden>·</span>
             <span>{farm.since}년부터</span>
-          </div>
+          </p>
           <div className="mt-4 flex flex-wrap gap-1.5">
             {farm.certifications.map((c) => (
               <span
@@ -93,7 +95,7 @@ export default async function FarmDetailPage({
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14">
           {/* Story */}
           <div>
-            <h2 className="text-lg font-extrabold text-bark-900 md:text-xl">농가 이야기</h2>
+            <h2 className="text-lg font-bold text-bark-900 md:text-xl">농가 이야기</h2>
             <p className="mt-3 leading-relaxed text-bark-700">{farm.intro}</p>
             <div className="mt-4 space-y-4">
               {farm.story.map((para, i) => (
@@ -116,7 +118,7 @@ export default async function FarmDetailPage({
 
         {/* Products */}
         <section id="farm-products" className="mt-12 scroll-mt-20 md:mt-16 md:scroll-mt-32">
-          <h2 className="mb-5 text-lg font-extrabold text-bark-900 md:text-2xl">
+          <h2 className="mb-5 text-lg font-bold text-bark-900 md:text-2xl">
             {farm.name}의 판매 상품
           </h2>
           {farmProducts.length === 0 ? (

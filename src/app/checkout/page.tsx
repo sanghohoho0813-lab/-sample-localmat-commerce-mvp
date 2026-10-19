@@ -43,7 +43,7 @@ export default function CheckoutPage() {
 function CheckoutSkeleton() {
   return (
     <div className="container-page py-6 md:py-8" aria-busy="true">
-      <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">주문서</h1>
+      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">주문서</h1>
       <div className="h-64 animate-pulse rounded-card bg-white/70" />
     </div>
   );
@@ -172,7 +172,7 @@ function Checkout() {
 
   return (
     <div className="container-page py-6 md:py-8">
-      <h1 className="mb-5 text-xl font-extrabold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
+      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
         주문서
       </h1>
 
@@ -465,7 +465,7 @@ function Checkout() {
         {/* Summary */}
         <div className="lg:sticky lg:top-32">
           <div className="rounded-2xl bg-white p-4 sm:p-5">
-            <h2 className="mb-4 text-base font-extrabold text-bark-900">결제 금액</h2>
+            <h2 className="mb-4 text-base font-bold text-bark-900">결제 금액</h2>
             <PriceSummary itemsTotal={itemsTotal} shippingFee={shippingFee} couponDiscount={couponDiscount} />
             <button
               type="button"
@@ -519,7 +519,7 @@ function Checkout() {
 /** 주문서 단계 제목 — 번호로 순서를 보여 줘 정보가 많아도 어디까지 왔는지 알 수 있게 */
 function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
   return (
-    <h2 className="flex items-center gap-2 text-base font-extrabold text-bark-900">
+    <h2 className="flex items-center gap-2 text-base font-bold text-bark-900">
       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-leaf-700 text-[13px] font-bold text-white" aria-hidden>
         {n}
       </span>

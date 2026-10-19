@@ -18,7 +18,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <span className="flex h-20 w-20 items-center justify-center rounded-full bg-cream-200 text-bark-400">
         <TriangleAlert className="h-9 w-9" strokeWidth={1.8} />
       </span>
-      <h1 className="mt-5 text-lg font-extrabold text-bark-900">화면을 불러오지 못했어요</h1>
+      <h1 className="mt-5 text-lg font-bold text-bark-900">화면을 불러오지 못했어요</h1>
       <p className="mt-1.5 text-[16px] text-bark-500">잠시 후 다시 시도해 주세요. 장바구니에 담은 상품은 그대로 있어요.</p>
       <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
         <button type="button" onClick={reset} className="btn-primary h-12 px-6 text-[16px]">

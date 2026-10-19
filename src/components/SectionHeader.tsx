@@ -15,7 +15,7 @@ export default function SectionHeader({
   return (
     <div className="mb-4 flex items-end justify-between md:mb-6">
       <div>
-        <h2 className="text-lg font-extrabold tracking-tight text-bark-900 md:text-2xl">{title}</h2>
+        <h2 className="text-lg font-bold tracking-tight text-bark-900 md:text-2xl">{title}</h2>
         {subtitle && <p className="mt-1 text-sm text-bark-500">{subtitle}</p>}
       </div>
       {moreHref && (

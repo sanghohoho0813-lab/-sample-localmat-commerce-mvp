@@ -30,7 +30,7 @@ export default function PriceSummary({
       )}
       <div className="flex items-baseline justify-between border-t border-bark-100 pt-3">
         <span className="font-bold text-bark-900">총 결제 금액</span>
-        <span className="text-xl font-extrabold text-tangerine-600">{formatWon(total)}</span>
+        <span className="text-xl font-bold text-tangerine-600">{formatWon(total)}</span>
       </div>
     </div>
   );

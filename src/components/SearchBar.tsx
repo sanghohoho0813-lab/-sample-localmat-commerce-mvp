@@ -8,10 +8,13 @@ export default function SearchBar({
   placeholder = "상품, 농가, 지역 검색",
   initialQuery = "",
   autoFocus = false,
+  onCream = false,
 }: {
   placeholder?: string;
   initialQuery?: string;
   autoFocus?: boolean;
+  /** 크림 바탕 위에 놓일 때는 흰 면 + 옅은 테두리 (흰 헤더 위에서는 채운 면) */
+  onCream?: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -24,6 +27,7 @@ export default function SearchBar({
   }
 
   return (
+    // 상용 앱처럼 테두리 없는 채운 면 + 왼쪽 돋보기. 돋보기가 곧 검색(제출) 버튼입니다.
     <form onSubmit={submit} role="search" className="relative w-full">
       <input
         type="search"
@@ -32,14 +36,16 @@ export default function SearchBar({
         placeholder={placeholder}
         autoFocus={autoFocus}
         enterKeyHint="search"
-        className="h-13 w-full rounded-pill border border-leaf-200 bg-white pl-5 pr-14 text-base text-bark-800 placeholder:text-bark-400 outline-none transition-shadow duration-200 focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100"
+        className={`h-12 w-full rounded-xl border pl-12 pr-4 text-[16px] text-bark-800 placeholder:text-bark-400 outline-none transition-colors duration-200 focus:border-leaf-400 focus:bg-white focus:ring-2 focus:ring-leaf-100 ${
+          onCream ? "border-bark-200 bg-white" : "border-transparent bg-cream-100 hover:bg-cream-200/70"
+        }`}
       />
       <button
         type="submit"
         aria-label="검색"
-        className="absolute right-1.5 top-1.5 flex h-10 w-10 items-center justify-center rounded-pill bg-leaf-600 text-white transition-colors duration-200 hover:bg-leaf-700"
+        className="absolute left-1 top-1 flex h-10 w-10 items-center justify-center rounded-lg text-bark-600 transition-colors duration-200 hover:text-leaf-700"
       >
-        <Search className="h-[18px] w-[18px]" />
+        <Search className="h-5 w-5" strokeWidth={2.2} />
       </button>
     </form>
   );

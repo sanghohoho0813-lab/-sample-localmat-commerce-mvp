@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Clock, ShieldCheck, Ticket, Truck, Wallet } from "lucide-react";
+import { ChevronRight, Clock, MapPin, ShieldCheck, Ticket, Truck, Wallet } from "lucide-react";
 import FarmOfWeek from "@/components/home/FarmOfWeek";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import RepurchaseList from "@/components/home/RepurchaseList";
@@ -8,7 +8,7 @@ import SeasonalShowcase from "@/components/home/SeasonalShowcase";
 import HeroBanner from "@/components/HeroBanner";
 import SearchBar from "@/components/SearchBar";
 import { categories } from "@/lib/data/categories";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/data/etc";
+import { addresses, FREE_SHIPPING_THRESHOLD } from "@/lib/data/etc";
 import { farms } from "@/lib/data/farms";
 import { products } from "@/lib/data/products";
 import { formatPrice } from "@/lib/format";
@@ -35,6 +35,7 @@ function weekOfYear(): number {
 
 export default function HomePage() {
   const month = currentMonth();
+  const homeAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
   const bySales = (a: { salesCount: number }, b: { salesCount: number }) => b.salesCount - a.salesCount;
 
   const seasonal = products.filter((p) => isAvailable(p) && isInSeason(p, month)).sort(bySales).slice(0, 6);
@@ -54,9 +55,24 @@ export default function HomePage() {
 
   return (
     <div className="space-y-12 md:space-y-16">
-      {/* 모바일 검색창 — 헤더에 붙여 두면 스크롤 내내 화면 위 120px를 차지해서, 홈 맨 위에만 두고 함께 스크롤되게 합니다. */}
-      <div className="container-page pt-3 md:hidden">
-        <SearchBar />
+      {/* 모바일 첫 화면 머리 — 흰 헤더와 이어지는 한 덩어리: 어디로 받는지(배송지) + 무엇을 찾는지(검색).
+          헤더에 붙여 두면 스크롤 내내 화면 위를 차지하므로, 홈 맨 위에만 두고 함께 스크롤되게 합니다. */}
+      <div className="border-b border-bark-100 bg-white pb-4 md:hidden">
+        <div className="container-page">
+          <Link
+            href="/mypage?tab=addresses"
+            aria-label={`배송지 ${homeAddress.label}, ${homeAddress.address1} — 배송지 관리`}
+            className="-mx-1 flex h-10 items-center gap-1.5 rounded-lg px-1 text-[16px] tap-highlight-none focus-ring"
+          >
+            <MapPin className="h-[18px] w-[18px] shrink-0 text-leaf-700" aria-hidden />
+            <span className="shrink-0 font-bold text-bark-900">{homeAddress.label}</span>
+            <span className="min-w-0 truncate text-bark-500">{homeAddress.address1}</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-bark-400" aria-hidden />
+          </Link>
+          <div className="mt-1.5">
+            <SearchBar />
+          </div>
+        </div>
       </div>
       <div className="!mt-0">
         <HeroBanner month={month} farmCount={shippingFarms} />

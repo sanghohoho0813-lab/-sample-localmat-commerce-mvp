@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ChevronLeft, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import Logo from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
@@ -135,9 +135,28 @@ function MobileBackButton() {
   );
 }
 
+function useScrolled(enabled: boolean): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const update = () => setScrolled(window.scrollY > 8);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [enabled]);
+  return enabled && scrolled;
+}
+
 export default function Header() {
+  // 모바일 홈은 바로 아래 흰 배송지·검색 영역과 한 면으로 이어지도록, 스크롤하기 전까지 경계선을 뺍니다.
+  const isHome = usePathname() === "/";
+  const scrolled = useScrolled(isHome);
   return (
-    <header className="sticky top-0 z-40 border-b border-bark-100 bg-white/95 shadow-header backdrop-blur">
+    <header
+      className={`sticky top-0 z-40 border-b border-bark-100 bg-white/95 shadow-header backdrop-blur transition-[border-color,box-shadow] duration-200 ${
+        isHome && !scrolled ? "max-md:border-transparent max-md:shadow-none" : ""
+      }`}
+    >
       {/* Top row */}
       <div className="container-page flex h-14 items-center gap-3 md:h-16 md:gap-6">
         <Suspense fallback={null}>

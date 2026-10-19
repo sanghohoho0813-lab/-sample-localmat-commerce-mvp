@@ -25,30 +25,31 @@ export default function HeroBanner({ month, farmCount }: { month: number; farmCo
           className="object-cover object-[68%_center] md:object-[72%_center]"
         />
 
-        {/* 카피 가독성 스크림 — 모바일은 하단 딥그린, 데스크톱은 좌측 크림 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-leaf-950/95 from-20% via-leaf-900/70 to-leaf-900/20 md:bg-gradient-to-r md:from-cream-50 md:from-0% md:via-cream-50/88 md:via-45% md:to-transparent" />
+        {/* 카피 가독성 스크림 — 모바일은 사진 색을 살리는 중립 그림자(하단만), 데스크톱은 좌측 크림 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 from-10% via-black/35 via-55% to-black/0 md:bg-gradient-to-r md:from-cream-50 md:from-0% md:via-cream-50/88 md:via-45% md:to-transparent" />
 
-        <div className="relative flex min-h-[320px] flex-col justify-end px-5 pb-6 pt-16 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
-          <p className="flex items-center gap-1.5 text-xs font-semibold text-leaf-200 md:text-sm md:text-leaf-700">
+        <div className="relative flex min-h-[360px] flex-col justify-end px-5 pb-5 pt-20 md:block md:min-h-0 md:max-w-[58%] md:px-12 md:py-16 md:pt-16 lg:py-24">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-white/85 md:text-sm md:text-leaf-700">
             <Leaf className="h-4 w-4" />
             {month}월, 산지 {farmCount}곳에서 출하 중
           </p>
-          <h1 className="mt-2.5 text-[34px] font-extrabold leading-[1.25] tracking-tight text-white md:mt-3 md:text-[50px] md:text-bark-900 lg:text-5xl">
+          <h1 className="mt-2 text-[32px] font-bold leading-[1.22] tracking-tight text-white md:mt-3 md:text-[50px] md:text-bark-900 lg:text-5xl">
             지금, 가장 신선한
             <br />
             <span className="text-leaf-200 md:text-leaf-700">제철 로컬 푸드</span>
           </h1>
-          <p className="mt-2.5 text-sm leading-relaxed text-leaf-100/90 md:mt-4 md:text-base md:text-bark-600">
+          <p className="mt-2.5 text-sm leading-relaxed text-white/85 md:mt-4 md:text-base md:text-bark-600">
             <span className="hidden md:inline">농가가 직접 수확·포장해 보내는 제철 먹거리.<br /></span>
             {/* 실제 출고 마감(오후 2시)·주말 기준으로 계산한 도착일 — 시각을 알기 전엔 자리만 잡아 둡니다 */}
             <EtaLine products={[{ temp: "상온" }]} tone="onDark" />
           </p>
 
-          {/* 모바일은 핵심 버튼 하나만 — 농가 이야기는 하단 '스토리' 탭에 있습니다. */}
-          <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center md:mt-8">
+          {/* 모바일은 핵심 버튼 하나만 — 사진 위에서는 흰 알약 버튼이 화면을 덜 가리고 더 단정합니다.
+              농가 이야기는 하단 '스토리' 탭에 있습니다. */}
+          <div className="mt-5 flex flex-col items-start gap-2.5 sm:flex-row sm:items-center md:mt-8">
             <Link
               href="/products?filter=seasonal"
-              className="btn-primary h-13 w-full whitespace-nowrap px-5 text-[18px] shadow-soft sm:w-auto md:px-6"
+              className="inline-flex h-12 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-white px-5 text-[16px] font-semibold text-bark-900 shadow-soft transition-colors duration-200 hover:bg-cream-50 md:h-13 md:rounded-xl md:bg-tangerine-600 md:px-6 md:text-[18px] md:text-white md:hover:bg-tangerine-700"
             >
               {month}월 제철 장보기
               <ArrowRight className="h-4 w-4 shrink-0" />

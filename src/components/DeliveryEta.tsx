@@ -45,16 +45,16 @@ export function EtaLine({
       {plan.orderBy && plan.orderBy.getTime() - now.getTime() > COUNTDOWN_WINDOW_MS ? (
         <>
           오늘 <b className={`font-bold ${timeTone}`}>오후 2시까지</b> 주문하면{" "}
-          <b className={`font-bold ${dayTone}`}>{arrive} 도착</b>
+          <b className={`whitespace-nowrap font-bold ${dayTone}`}>{arrive} 도착</b>
         </>
       ) : plan.orderBy ? (
         <>
           <b className={`font-bold ${timeTone}`}>{timeLeft(plan.orderBy, now)}</b> 안에 주문하면{" "}
-          <b className={`font-bold ${dayTone}`}>{arrive} 도착</b>
+          <b className={`whitespace-nowrap font-bold ${dayTone}`}>{arrive} 도착</b>
         </>
       ) : (
         <>
-          지금 주문하면 <b className={`font-bold ${dayTone}`}>{arrive} 도착</b>
+          지금 주문하면 <b className={`whitespace-nowrap font-bold ${dayTone}`}>{arrive} 도착</b>
         </>
       )}
     </span>

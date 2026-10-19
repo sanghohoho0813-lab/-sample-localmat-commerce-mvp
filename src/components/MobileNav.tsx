@@ -41,6 +41,7 @@ export default function MobileNav() {
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={`relative flex min-w-0 flex-col items-center justify-center gap-1 tap-highlight-none transition-colors duration-200 ${
                 active ? "text-leaf-700" : "text-bark-400"
               }`}

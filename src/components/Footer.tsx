@@ -11,7 +11,7 @@ export default function Footer() {
       <div className="container-page hidden gap-8 pb-10 md:grid md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-1">
-            <span className="text-lg font-extrabold text-leaf-700">로컬맘</span>
+            <span className="text-lg font-bold text-leaf-700">로컬맘</span>
             <Sprout className="h-4 w-4 text-leaf-500" />
           </div>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-bark-500">

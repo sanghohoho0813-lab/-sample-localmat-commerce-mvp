@@ -29,7 +29,7 @@ export default function EmptyState({
       <span className="flex h-20 w-20 items-center justify-center rounded-full bg-cream-200 text-bark-300">
         <Icon className="h-9 w-9" strokeWidth={1.8} />
       </span>
-      <Heading className="mt-5 text-lg font-extrabold text-bark-900">{title}</Heading>
+      <Heading className="mt-5 text-lg font-bold text-bark-900">{title}</Heading>
       {description && <p className="mt-1.5 text-[16px] text-bark-500">{description}</p>}
       {action && (
         <Link href={action.href} className="btn-primary mt-6 h-12 px-6 text-[16px]">
