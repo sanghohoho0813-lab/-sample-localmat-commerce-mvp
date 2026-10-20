@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { SearchX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Clock, SearchX, X } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FarmCard from "@/components/FarmCard";
 import ProductCard from "@/components/ProductCard";
 import SearchBar from "@/components/SearchBar";
+import { categories } from "@/lib/data/categories";
 import { searchCatalog } from "@/lib/search";
+import { useSearchHistoryStore } from "@/lib/store";
+import { useHydrated } from "@/lib/useHydrated";
 import { useTabs } from "@/lib/useTabs";
 
 const RESULT_TABS = ["products", "farms"] as const;
@@ -30,7 +33,105 @@ function KeywordChips() {
   );
 }
 
+/** 검색 첫 화면 — 최근 검색어(지우기) → 많이 찾는 검색어 순위 → 카테고리로 둘러보기 */
+function SearchLanding() {
+  const hydrated = useHydrated();
+  const terms = useSearchHistoryStore((s) => s.terms);
+  const removeTerm = useSearchHistoryStore((s) => s.remove);
+  const clearTerms = useSearchHistoryStore((s) => s.clear);
+  const recent = hydrated ? terms : [];
+
+  return (
+    <div className="mx-auto mt-6 max-w-xl space-y-9 md:mt-4">
+      <h1 className="sr-only">검색</h1>
+
+      {recent.length > 0 && (
+        <section aria-labelledby="recent-search-title">
+          <div className="flex items-center justify-between">
+            <h2 id="recent-search-title" className="text-base font-bold text-bark-900">
+              최근 검색어
+            </h2>
+            <button
+              type="button"
+              onClick={clearTerms}
+              className="-mr-2 h-10 rounded-lg px-2 text-sm font-medium text-bark-500 transition-colors hover:text-bark-800"
+            >
+              전체 삭제
+            </button>
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {recent.map((t) => (
+              <li key={t} className="flex h-10 items-center rounded-pill border border-bark-200 bg-white pl-3.5 pr-1">
+                <Link
+                  href={`/search?q=${encodeURIComponent(t)}`}
+                  className="flex items-center gap-1.5 text-[15px] text-bark-700 hover:text-leaf-700"
+                >
+                  <Clock className="h-3.5 w-3.5 text-bark-400" aria-hidden />
+                  {t}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => removeTerm(t)}
+                  aria-label={`최근 검색어 ${t} 지우기`}
+                  className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-full text-bark-400 transition-colors hover:bg-cream-100 hover:text-bark-700"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section aria-labelledby="popular-search-title">
+        <h2 id="popular-search-title" className="text-base font-bold text-bark-900">
+          많이 찾는 검색어
+        </h2>
+        <ol className="mt-1 grid grid-cols-2 gap-x-6">
+          {popularKeywords.map((k, i) => (
+            <li key={k}>
+              <Link
+                href={`/search?q=${encodeURIComponent(k)}`}
+                className="flex h-12 items-center gap-3 border-b border-bark-100 text-[16px] text-bark-800 transition-colors hover:text-leaf-700"
+              >
+                <span aria-hidden className={`w-4 text-center font-bold tabular-nums ${i < 3 ? "text-leaf-700" : "text-bark-400"}`}>
+                  {i + 1}
+                </span>
+                {k}
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-labelledby="browse-category-title">
+        <h2 id="browse-category-title" className="text-base font-bold text-bark-900">
+          카테고리로 둘러보기
+        </h2>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {categories.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/products?category=${c.slug}`}
+                className="flex h-10 items-center rounded-pill bg-white px-4 text-[15px] text-bark-700 transition-colors hover:text-leaf-700"
+              >
+                {c.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 export default function SearchClient({ query }: { query: string }) {
+  // 검색한 말은 최근 검색어로 남깁니다(검색창·인기 검색어·주소 어디서 왔든).
+  const remember = useSearchHistoryStore((s) => s.add);
+  useEffect(() => {
+    if (query.trim()) remember(query);
+  }, [query, remember]);
+
   const { products: matchedProducts, farms: matchedFarms } = useMemo(() => searchCatalog(query), [query]);
 
   // 결과가 있는 쪽 탭을 먼저 보여 줍니다(예: 농부 이름으로 검색하면 '농가' 탭).
@@ -48,12 +149,7 @@ export default function SearchClient({ query }: { query: string }) {
       </div>
 
       {!query ? (
-        <div className="mt-10 text-center md:mt-16">
-          <h1 className="text-xl font-bold text-bark-900">무엇을 찾고 계세요?</h1>
-          <p className="mt-2 text-bark-500">상품명, 지역, 농가 이름으로 찾을 수 있어요.</p>
-          <p className="mb-3 mt-8 text-sm font-semibold text-bark-400">많이 찾는 검색어</p>
-          <KeywordChips />
-        </div>
+        <SearchLanding />
       ) : (
         <>
           <h1 className="mt-5 text-xl font-bold text-bark-900 md:mt-0 md:text-2xl">

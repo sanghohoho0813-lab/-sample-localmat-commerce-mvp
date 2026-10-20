@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart } from "lucide-react";
+import { getProduct } from "@/lib/data/products";
 import { useToastStore, useWishlistStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -32,6 +33,8 @@ export default function WishlistButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        const product = getProduct(productId);
+        const extra = product ? { thumb: product.image, detail: `${product.name} ${product.unit}` } : undefined;
         if (isLiked) {
           // 찜 목록 화면에서 누르면 카드가 바로 사라지므로 원래 자리로 되돌릴 수 있게 합니다.
           const index = useWishlistStore.getState().ids.indexOf(productId);
@@ -45,10 +48,10 @@ export default function WishlistButton({
                 ids.splice(Math.max(0, index), 0, productId);
                 return { ids };
               }),
-          });
+          }, extra);
         } else {
           toggle(productId);
-          showToast("찜 목록에 담았어요.", { label: "보러가기", href: "/mypage?tab=wishlist" });
+          showToast("찜 목록에 담았어요.", { label: "보러가기", href: "/mypage?tab=wishlist" }, extra);
         }
       }}
       className={`flex ${dims} items-center justify-center rounded-full bg-white/90 shadow-soft backdrop-blur transition-transform duration-200 hover:scale-110 active:scale-95 tap-highlight-none ${className}`}

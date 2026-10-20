@@ -11,13 +11,14 @@ import ProductCard from "@/components/ProductCard";
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
 import { getFarm } from "@/lib/data/farms";
-import { getProduct } from "@/lib/data/products";
+import { getProduct, products } from "@/lib/data/products";
 import { groupByFarm } from "@/lib/catalog";
 import { formatWon, itemLabel } from "@/lib/format";
 import { orderableItems } from "@/lib/persisted";
 import { couponOptions, freeShippingGap, summarize, unitPrice as unitPriceOf } from "@/lib/pricing";
 import { cartSuggestions } from "@/lib/recommend";
-import { maxQuantityFor, useCartStore, useToastStore } from "@/lib/store";
+import { isAvailable } from "@/lib/season";
+import { maxQuantityFor, useCartStore, useRecentStore, useToastStore } from "@/lib/store";
 import type { CartItem, Product } from "@/lib/types";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -47,6 +48,22 @@ export default function CartPage() {
 
   const suggestions = useMemo(() => cartSuggestions(orderable, itemsTotal), [orderable, itemsTotal]);
 
+  // 빈 장바구니가 막다른 길이 되지 않게 — 최근 본 상품(살 수 있는 것)부터, 모자라면 많이 찾는 상품으로 채웁니다.
+  const recentIds = useRecentStore((s) => s.ids);
+  const emptyPicks = useMemo(() => {
+    const recent = (hydrated ? recentIds : [])
+      .map((id) => getProduct(id))
+      .filter((p): p is Product => !!p && isAvailable(p))
+      .slice(0, 4)
+      .map((product) => ({ product, reason: "최근 본 상품" }));
+    const taken = new Set(recent.map((r) => r.product.id));
+    const popular = products
+      .filter((p) => isAvailable(p) && !taken.has(p.id))
+      .sort((a, b) => b.salesCount - a.salesCount)
+      .map((product) => ({ product, reason: "많이 찾는 상품" }));
+    return [...recent, ...popular].slice(0, 4);
+  }, [hydrated, recentIds]);
+
   function remove(item: CartItem) {
     const index = items.indexOf(item);
     removeItem(item.productId, item.optionLabel);
@@ -72,8 +89,18 @@ export default function CartPage() {
           title="장바구니가 비어 있어요"
           description="지금 출하 중인 제철 먹거리부터 둘러보세요."
           action={{ label: "제철 상품 보러가기", href: "/products?filter=seasonal" }}
-          className="py-20 md:py-24"
+          className="py-14 md:py-20"
         />
+        <section className="border-t border-bark-100 pb-10 pt-8" aria-labelledby="empty-cart-picks">
+          <h2 id="empty-cart-picks" className="mb-4 text-lg font-bold text-bark-900 md:text-xl">
+            이런 상품은 어때요?
+          </h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4 md:gap-x-5">
+            {emptyPicks.map((r) => (
+              <ProductCard key={r.product.id} product={r.product} reason={r.reason} />
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

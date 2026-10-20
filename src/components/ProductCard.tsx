@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Star } from "lucide-react";
+import { Check, ShoppingCart, Star } from "lucide-react";
 import type { Product, ProductBadge } from "@/lib/types";
 import { EtaShort } from "@/components/DeliveryEta";
 import { originLabel } from "@/lib/catalog";
 import { discountRate, formatPrice } from "@/lib/format";
-import { useCartStore, useToastStore } from "@/lib/store";
+import { useQuickAdd } from "@/lib/useQuickAdd";
 import Badge from "@/components/Badge";
 import ProductImage from "@/components/ProductImage";
 import WishlistButton from "@/components/WishlistButton";
@@ -44,24 +44,10 @@ export default function ProductCard({
   reason?: string;
 }) {
   const rate = discountRate(product.price, product.originalPrice);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const { add: quickAdd, added } = useQuickAdd(product);
   const soldOut = product.stock === 0;
   const lowStock = !soldOut && product.stock <= LOW_STOCK_THRESHOLD;
   const badge = primaryBadge(product.badges);
-
-  function quickAdd() {
-    const defaultOption = product.options?.[0]?.label;
-    const { quantity, capped } = addItem(product.id, 1, defaultOption);
-    showToast(
-      capped
-        ? `재고가 ${quantity}개뿐이라 더 담을 수 없어요.`
-        : quantity > 1
-          ? `장바구니에 담았어요 (총 ${quantity}개)`
-          : "장바구니에 담았어요.",
-      { label: "보러가기", href: "/cart" }
-    );
-  }
 
   // 카드 전체를 누르면 상세로 가되, 찜·담기 버튼을 링크 안에 넣지 않습니다(링크 안 버튼은 HTML 규칙 위반이고
   // 스크린리더·키보드 포커스가 꼬입니다). 상품명 링크를 카드 전체로 늘리는 'stretched link' 방식입니다.
@@ -152,9 +138,14 @@ export default function ProductCard({
             type="button"
             onClick={quickAdd}
             aria-label={`${product.name} 장바구니 담기`}
-            className="pointer-events-auto absolute bottom-2.5 right-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-leaf-700 shadow-soft transition-all duration-200 hover:bg-leaf-700 hover:text-white active:scale-95 focus-ring md:h-10 md:w-10 md:translate-y-1 md:opacity-0 md:focus-visible:translate-y-0 md:focus-visible:opacity-100 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100"
+            className={`pointer-events-auto absolute bottom-2.5 right-2.5 flex h-11 w-11 items-center justify-center rounded-full shadow-soft transition-all duration-200 active:scale-95 focus-ring md:h-10 md:w-10 md:focus-visible:translate-y-0 md:focus-visible:opacity-100 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 ${
+              added
+                ? "bg-leaf-700 text-white md:translate-y-0 md:opacity-100"
+                : "bg-white/95 text-leaf-700 hover:bg-leaf-700 hover:text-white md:translate-y-1 md:opacity-0"
+            }`}
           >
-            <ShoppingCart className="h-[18px] w-[18px]" />
+            {/* 담은 직후 잠깐 체크로 — 눌렀다는 것을 버튼 자리에서 바로 알 수 있게 */}
+            {added ? <Check className="h-[18px] w-[18px] animate-pop" strokeWidth={2.6} /> : <ShoppingCart className="h-[18px] w-[18px]" />}
           </button>
         </div>
       )}

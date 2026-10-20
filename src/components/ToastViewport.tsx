@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Info } from "lucide-react";
 import { useToastStore } from "@/lib/store";
 
 /**
@@ -23,10 +24,31 @@ export default function ToastViewport() {
         <div
           key={t.id}
           role="status"
-          className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl bg-bark-900/95 py-3 pl-4 pr-2 text-white shadow-lift backdrop-blur animate-toast-in"
+          className={`pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl bg-bark-900/95 pr-2 text-white shadow-lift backdrop-blur animate-toast-in ${
+            t.thumb ? "py-2.5 pl-2.5" : "py-3 pl-4"
+          }`}
         >
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-leaf-300" />
-          <span className="min-w-0 flex-1 text-[16px] font-medium leading-snug">{t.message}</span>
+          {t.thumb ? (
+            // 무엇이 담겼는지 사진으로 — 글자를 읽지 않아도 알 수 있게
+            <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white/10">
+              <Image src={t.thumb} alt="" fill sizes="44px" className="object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-bark-900">
+                {t.tone === "info" ? (
+                  <Info className="h-3.5 w-3.5 text-tangerine-300" aria-hidden />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-leaf-300" aria-hidden />
+                )}
+              </span>
+            </span>
+          ) : t.tone === "info" ? (
+            <Info className="h-5 w-5 shrink-0 text-tangerine-300" aria-hidden />
+          ) : (
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-leaf-300" aria-hidden />
+          )}
+          <span className="min-w-0 flex-1 leading-snug">
+            <span className="block text-[16px] font-medium">{t.message}</span>
+            {t.detail && <span className="mt-0.5 block truncate text-sm text-white/70">{t.detail}</span>}
+          </span>
           {t.action &&
             (t.action.href ? (
               <Link

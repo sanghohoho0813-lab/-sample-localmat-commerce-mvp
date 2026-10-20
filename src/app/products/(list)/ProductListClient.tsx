@@ -70,7 +70,7 @@ function CategoryChips({ activeSlug, seasonalOnly }: { activeSlug?: string; seas
   ];
 
   return (
-    <nav aria-label="카테고리" className="-mx-4 mb-4 overflow-x-auto px-4 scrollbar-none sm:-mx-6 sm:px-6 md:hidden">
+    <nav aria-label="카테고리" className="-mx-4 mb-2 overflow-x-auto px-4 scrollbar-none sm:-mx-6 sm:px-6 md:hidden">
       <div className="flex w-max gap-2">
         {chips.map((c) => (
           <Link
@@ -286,41 +286,85 @@ export default function ProductListClient({
         </aside>
 
         <div className="min-w-0 flex-1">
-          {/* Toolbar */}
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-bark-500">
-              총 <span className="font-bold text-bark-800">{filtered.length}</span>개
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(true)}
-                className="btn-outline h-12 gap-1.5 px-4 text-[16px] lg:hidden"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                필터
-                {activeFilterCount > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-leaf-600 text-[13px] font-bold text-white">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-              <div className="relative">
-                <ListFilter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-bark-400" />
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  aria-label="정렬"
-                  className="h-12 appearance-none rounded-xl border border-bark-200 bg-white pl-9 pr-4 text-[16px] font-medium text-bark-700 outline-none transition-colors focus:border-leaf-400"
+          {/* 도구 줄 — 모바일·태블릿은 긴 목록을 내려가도 헤더 바로 아래에 붙어 있어, 언제든 필터·정렬을 바꿀 수 있습니다. */}
+          <div className="sticky top-14 z-20 -mx-4 mb-4 bg-cream-100/95 px-4 py-2 shadow-[0_1px_0_rgba(46,44,39,0.06)] backdrop-blur sm:-mx-6 sm:px-6 md:top-[113px] lg:static lg:mx-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+            <div className="flex items-center justify-between gap-3">
+              <p className="shrink-0 whitespace-nowrap text-sm text-bark-500" aria-live="polite">
+                총 <span className="font-bold text-bark-800">{filtered.length}</span>개
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  className={`btn-outline h-11 gap-1.5 px-3.5 text-[16px] lg:hidden ${
+                    activeFilterCount > 0 ? "border-leaf-600 text-leaf-800" : ""
+                  }`}
                 >
-                  {sortOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  <SlidersHorizontal className="h-4 w-4" />
+                  필터
+                  {activeFilterCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-leaf-600 text-[13px] font-bold text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+                <div className="relative">
+                  <ListFilter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-bark-400" />
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    aria-label="정렬"
+                    className="h-11 appearance-none rounded-xl border border-bark-200 bg-white pl-9 pr-4 text-[16px] font-medium text-bark-700 outline-none transition-colors focus:border-leaf-400 lg:h-12"
+                  >
+                    {sortOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
+
+            {/* 적용한 필터 — 무엇으로 걸렀는지 늘 보이고, 하나씩 바로 풀 수 있게 */}
+            {activeFilterCount > 0 && (
+              <ul className="-mx-4 mt-2 flex items-center gap-1.5 overflow-x-auto px-4 pb-0.5 scrollbar-none sm:-mx-6 sm:px-6 lg:mx-0 lg:mt-3 lg:flex-wrap lg:px-0" aria-label="적용한 필터">
+                {[
+                  ...selectedPrices.map((v) => ({
+                    key: `p-${v}`,
+                    label: priceRanges.find((r) => r.value === v)?.label ?? v,
+                    remove: () => toggle(selectedPrices, v, setSelectedPrices),
+                  })),
+                  ...selectedRegions.map((v) => ({
+                    key: `r-${v}`,
+                    label: v,
+                    remove: () => toggle(selectedRegions, v, setSelectedRegions),
+                  })),
+                ].map((f) => (
+                  <li key={f.key} className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={f.remove}
+                      aria-label={`${f.label} 필터 해제`}
+                      className="flex h-8 items-center gap-1 rounded-pill bg-leaf-50 pl-3 pr-2 text-sm font-semibold text-leaf-800 transition-colors hover:bg-leaf-100"
+                    >
+                      {f.label}
+                      <X className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+                <li className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="flex h-8 items-center gap-1 rounded-pill px-2.5 text-sm font-medium text-bark-500 transition-colors hover:text-bark-800"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                    초기화
+                  </button>
+                </li>
+              </ul>
+            )}
           </div>
 
           {filtered.length === 0 ? (

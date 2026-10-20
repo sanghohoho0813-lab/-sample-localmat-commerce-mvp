@@ -6,6 +6,7 @@ import {
   sanitizeOrders,
   sanitizeProductIds,
   sanitizeReviews,
+  sanitizeSearchHistory,
 } from "./persisted";
 
 describe("sanitizeCartItems", () => {
@@ -74,5 +75,16 @@ describe("sanitizeOrders / sanitizeReviews", () => {
   it("별점 범위를 벗어난 리뷰는 버린다", () => {
     const base = { id: "r", productId: "p01", content: "좋아요", author: "김*장", date: "2026-01-01" };
     expect(sanitizeReviews([{ ...base, rating: 5 }, { ...base, rating: 9 }, { ...base, rating: 0 }])).toHaveLength(1);
+  });
+});
+
+describe("sanitizeSearchHistory", () => {
+  it("글자만 남기고 공백을 정리하며 중복은 최근 것 하나만", () => {
+    expect(sanitizeSearchHistory(["  제주  감귤 ", 3, null, "딸기", "제주 감귤", ""])).toEqual(["제주 감귤", "딸기"]);
+  });
+  it("개수 제한과 깨진 값", () => {
+    expect(sanitizeSearchHistory(Array.from({ length: 20 }, (_, i) => `검색${i}`))).toHaveLength(8);
+    expect(sanitizeSearchHistory("not array")).toEqual([]);
+    expect(sanitizeSearchHistory(["x".repeat(41)])).toEqual([]);
   });
 });

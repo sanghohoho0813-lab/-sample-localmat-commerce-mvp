@@ -13,6 +13,7 @@ import {
   sanitizeOrders,
   sanitizeProductIds,
   sanitizeReviews,
+  sanitizeSearchHistory,
 } from "@/lib/persisted";
 
 export { maxQuantityFor };
@@ -276,6 +277,35 @@ export const useRecentStore = create<RecentState>()(
   )
 );
 
+// ── 최근 검색어 ──────────────────────────────────────
+
+interface SearchHistoryState {
+  terms: string[];
+  add: (term: string) => void;
+  remove: (term: string) => void;
+  clear: () => void;
+}
+
+export const useSearchHistoryStore = create<SearchHistoryState>()(
+  persist(
+    (set) => ({
+      terms: [],
+      add: (term) => set((state) => ({ terms: sanitizeSearchHistory([term, ...state.terms]) })),
+      remove: (term) => set((state) => ({ terms: state.terms.filter((t) => t !== term) })),
+      clear: () => set({ terms: [] }),
+    }),
+    {
+      name: "localmat-search-history",
+      version: STORAGE_VERSION,
+      migrate: keepPersisted,
+      merge: (persisted, current) => ({
+        ...current,
+        terms: sanitizeSearchHistory((persisted as Partial<SearchHistoryState> | undefined)?.terms),
+      }),
+    }
+  )
+);
+
 // ── Reviews (내가 쓴 리뷰) ──────────────────────────────
 
 export interface MyReview extends Review {
@@ -339,7 +369,16 @@ export interface ToastAction {
   onClick?: () => void;
 }
 
-export interface Toast {
+export interface ToastExtra {
+  /** 무엇을 담았는지 한눈에 — 상품 사진 */
+  thumb?: string;
+  /** 둘째 줄 설명 (예: "제주 노지 감귤 5kg · 1개") */
+  detail?: string;
+  /** 안내(재고 한도 등)는 체크 대신 정보 아이콘 */
+  tone?: "success" | "info";
+}
+
+export interface Toast extends ToastExtra {
   id: number;
   message: string;
   action?: ToastAction;
@@ -347,7 +386,7 @@ export interface Toast {
 
 interface ToastState {
   toasts: Toast[];
-  show: (message: string, action?: ToastAction) => void;
+  show: (message: string, action?: ToastAction, extra?: ToastExtra) => void;
   dismiss: (id: number) => void;
 }
 
@@ -360,10 +399,10 @@ let toastTimer: ReturnType<typeof setTimeout> | undefined;
  */
 export const useToastStore = create<ToastState>()((set) => ({
   toasts: [],
-  show: (message, action) => {
+  show: (message, action, extra) => {
     const id = ++toastSeq;
     if (toastTimer) clearTimeout(toastTimer);
-    set({ toasts: [{ id, message, action }] });
+    set({ toasts: [{ id, message, action, ...extra }] });
     toastTimer = setTimeout(
       () => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
       action?.onClick ? 4500 : 2800
@@ -376,7 +415,7 @@ export const useToastStore = create<ToastState>()((set) => ({
 // 다른 탭에서 장바구니·찜·주문이 바뀌면(storage 이벤트) 이 탭도 저장값을 다시 읽어
 // 헤더 배지와 목록이 서로 어긋나지 않게 합니다.
 if (typeof window !== "undefined") {
-  const synced = [useCartStore, useWishlistStore, useOrderStore, useRecentStore, useReviewStore];
+  const synced = [useCartStore, useWishlistStore, useOrderStore, useRecentStore, useReviewStore, useSearchHistoryStore];
   window.addEventListener("storage", (event) => {
     for (const store of synced) {
       if (event.key === store.persist.getOptions().name) void store.persist.rehydrate();

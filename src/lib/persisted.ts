@@ -70,6 +70,17 @@ export function sanitizeProductIds(raw: unknown, limit = Infinity): string[] {
   return [...new Set(ids)].slice(0, limit);
 }
 
+/** 최근 검색어 — 글자만, 앞뒤 공백 없이, 중복 없이(최근 것 우선), 너무 긴 것은 버림 */
+export const SEARCH_HISTORY_LIMIT = 8;
+export function sanitizeSearchHistory(raw: unknown, limit = SEARCH_HISTORY_LIMIT): string[] {
+  if (!Array.isArray(raw)) return [];
+  const terms = raw
+    .filter((t): t is string => typeof t === "string")
+    .map((t) => t.trim().replace(/\s+/g, " "))
+    .filter((t) => t.length > 0 && t.length <= 40);
+  return [...new Set(terms)].slice(0, limit);
+}
+
 /** 주문 — 화면이 기대는 최소 모양(id, 상품 목록, 금액)을 갖춘 것만 */
 export function sanitizeOrders(raw: unknown): Order[] {
   if (!Array.isArray(raw)) return [];

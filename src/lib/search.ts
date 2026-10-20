@@ -53,3 +53,30 @@ export function searchCatalog(
     farms: farms.filter((f) => matches(farmText(f), q)),
   };
 }
+
+export type Suggestion =
+  | { kind: "product"; product: Product; href: string }
+  | { kind: "farm"; farm: Farm; href: string };
+
+/**
+ * 검색창 자동완성 — 입력하는 동안 바로 갈 수 있는 상품·농가 몇 개.
+ * 이름에 들어 있는 것만 고릅니다(설명에만 들어간 상품까지 띄우면 목록이 길고 엉뚱해 보입니다).
+ * 상품은 살 수 있는 것 → 많이 팔린 순, 농가는 뒤에 붙입니다.
+ */
+export function suggest(
+  query: string,
+  { limit = 6, products = allProducts, farms = allFarms }: { limit?: number; products?: readonly Product[]; farms?: readonly Farm[] } = {}
+): Suggestion[] {
+  const q = query.trim();
+  if (!q) return [];
+  const productHits: Suggestion[] = products
+    .filter((p) => matches(`${p.name} ${p.unit}`, q) || matches(getFarm(p.farmId)?.name ?? "", q))
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0) || b.salesCount - a.salesCount)
+    .map((product) => ({ kind: "product", product, href: `/products/${product.slug}` }));
+  const farmHits: Suggestion[] = farms
+    .filter((f) => matches(`${f.name} ${f.region} ${f.owner}`, q))
+    .map((farm) => ({ kind: "farm", farm, href: `/farms/${farm.slug}` }));
+  // 농가가 맞으면 한 자리는 농가에 남겨 둡니다(상품에 밀려 안 보이지 않게).
+  const farmSlots = Math.min(farmHits.length, 2);
+  return [...productHits.slice(0, limit - farmSlots), ...farmHits.slice(0, farmSlots)].slice(0, limit);
+}

@@ -8,6 +8,8 @@ import ProductImage from "@/components/ProductImage";
 const MIN_LENGTH = 10;
 const MAX_LENGTH = 300;
 const RATING_WORDS = ["", "별로예요", "그저 그래요", "괜찮아요", "좋아요", "최고예요"];
+/** 신선식품 후기에 자주 쓰는 말 — 눌러서 이어 붙이고, 그대로 고쳐 쓸 수 있습니다. */
+const QUICK_PHRASES = ["신선해요", "포장이 꼼꼼해요", "양이 넉넉해요", "맛있어요", "또 살게요"];
 
 /**
  * 리뷰 작성 창 — 별점과 한 줄 이상의 후기만 받습니다.
@@ -30,6 +32,7 @@ export default function ReviewModal({
   const titleId = useId();
   const firstStarRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   const ratingError = submitted && rating === 0;
   const contentError = submitted && content.trim().length < MIN_LENGTH;
@@ -66,13 +69,16 @@ export default function ReviewModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="m-0 h-full max-h-none w-full max-w-none items-center justify-center bg-transparent p-4 backdrop:bg-bark-900/50 open:flex"
+      // 모바일은 아래에서 올라오는 시트(필터 시트와 같은 모양), PC는 가운데 창
+      className="m-0 h-full max-h-none w-full max-w-none items-end justify-center bg-transparent p-0 backdrop:bg-bark-900/50 open:flex md:items-center md:p-4"
     >
       <form
         onSubmit={handleSubmit}
         noValidate
-        className="relative flex max-h-full w-full max-w-md flex-col overflow-y-auto rounded-3xl bg-white p-5 shadow-lift animate-fade-up md:p-6"
+        className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-3xl bg-white px-5 pt-5 shadow-lift animate-fade-up md:max-h-full md:max-w-md md:rounded-3xl md:p-6"
+        style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}
       >
+        <span className="mx-auto -mt-2 mb-3 block h-1 w-10 rounded-full bg-bark-200 md:hidden" aria-hidden />
         <div className="flex items-start justify-between gap-3">
           <h2 id={titleId} className="text-lg font-bold text-bark-900">
             리뷰 쓰기
@@ -136,12 +142,37 @@ export default function ReviewModal({
             maxLength={MAX_LENGTH}
             rows={4}
             placeholder="맛, 신선도, 포장 상태 등을 알려 주세요."
+            ref={contentRef}
             aria-invalid={contentError}
             className={`mt-1.5 w-full resize-none rounded-xl border bg-white p-3.5 text-[16px] leading-relaxed outline-none ${
               contentError ? "border-red-400 focus:border-red-500" : "border-bark-200 focus:border-leaf-400"
             }`}
           />
-          <div className="mt-1 flex items-start justify-between gap-3 text-sm">
+          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="자주 쓰는 말">
+            {QUICK_PHRASES.map((phrase) => {
+              const used = content.includes(phrase);
+              return (
+                <li key={phrase}>
+                  <button
+                    type="button"
+                    disabled={used}
+                    onClick={() => {
+                      setContent((prev) => {
+                        const base = prev.trimEnd();
+                        return `${base}${base ? " " : ""}${phrase}.`.slice(0, MAX_LENGTH);
+                      });
+                      contentRef.current?.focus();
+                    }}
+                    className="h-9 rounded-pill border border-bark-200 bg-white px-3 text-sm font-medium text-bark-700 transition-colors hover:border-leaf-400 hover:text-leaf-700 disabled:border-leaf-200 disabled:bg-leaf-50 disabled:text-leaf-700"
+                  >
+                    {used ? "✓ " : "+ "}
+                    {phrase}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-1.5 flex items-start justify-between gap-3 text-sm">
             <p className={contentError ? "font-medium text-red-600" : "text-bark-400"} role={contentError ? "alert" : undefined}>
               {contentError ? `${MIN_LENGTH}자 이상 적어 주세요.` : `${MIN_LENGTH}자 이상`}
             </p>

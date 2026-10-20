@@ -17,7 +17,7 @@ import { getFarm } from "@/lib/data/farms";
 import { getProduct, products } from "@/lib/data/products";
 import { getProductReviews } from "@/lib/data/reviews";
 import { shippingPolicy } from "@/lib/delivery";
-import { formatDate, formatPrice, formatWon } from "@/lib/format";
+import { formatDate, formatPrice, formatWon, itemLabel } from "@/lib/format";
 import { recommendFor } from "@/lib/recommend";
 import { isAvailable, isInSeason, seasonLabel } from "@/lib/season";
 import {
@@ -125,7 +125,18 @@ export default function ProductDetailClient({ product, month }: { product: Produ
       result.capped
         ? `재고가 ${maxQuantity}개라 장바구니에 ${result.quantity}개까지만 담았어요.`
         : "장바구니에 담았어요.",
-      { label: "보러가기", href: "/cart" }
+      { label: "보러가기", href: "/cart" },
+      {
+        thumb: product.image,
+        detail: [
+          itemLabel(product.name, product.unit, optionLabel).title,
+          itemLabel(product.name, product.unit, optionLabel).option,
+          `${quantity}개`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        tone: result.capped ? "info" : "success",
+      }
     );
   }
 

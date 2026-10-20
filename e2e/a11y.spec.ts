@@ -9,6 +9,7 @@ const pages = [
   "/cart",
   "/farms/nonsan-ttalgi",
   "/search?q=딸기",
+  "/search",
   "/orders",
   "/order-complete/seed-o05",
   "/mypage",
