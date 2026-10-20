@@ -147,18 +147,26 @@ export default function MyPageClient({ initialTab }: { initialTab: string }) {
             <p className="mb-3 text-[16px] text-bark-600">주문서에서 가장 많이 할인되는 쿠폰이 자동으로 적용돼요.</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {coupons.map((c) => (
-                <div
-                  key={c.id}
-                  className="relative overflow-hidden rounded-card border border-dashed border-tangerine-300 bg-tangerine-50 p-5"
-                >
-                  <p className="text-xl font-bold text-tangerine-600">
-                    {c.discountType === "percent" ? `${c.value}%` : formatWon(c.value)}
-                  </p>
-                  <p className="mt-1 text-[16px] font-bold text-bark-800">{c.name}</p>
-                  <p className="mt-2 text-sm text-bark-500">
-                    {formatWon(c.minOrder)} 이상 주문 시 · {c.expiresAt.replaceAll("-", ".")}까지
-                  </p>
-                  <Ticket className="absolute -right-2 -top-2 h-14 w-14 rotate-12 text-tangerine-200" />
+                // 쿠폰 모양 — 왼쪽 할인 금액, 점선 절취선(양쪽 홈), 오른쪽 조건
+                <div key={c.id} className="relative flex overflow-hidden rounded-2xl bg-white">
+                  <div className="flex w-[34%] shrink-0 flex-col items-center justify-center bg-tangerine-50 px-3 py-5 text-center">
+                    <p className="text-2xl font-bold leading-none tracking-tight text-tangerine-700">
+                      {c.discountType === "percent" ? `${c.value}%` : `${(c.value / 1000).toLocaleString()}천원`}
+                    </p>
+                    <p className="mt-1.5 text-xs font-semibold text-tangerine-700">할인</p>
+                  </div>
+                  <div className="relative border-l-2 border-dashed border-cream-200" aria-hidden>
+                    <span className="absolute -left-[9px] -top-2 h-4 w-4 rounded-full bg-cream-100" />
+                    <span className="absolute -bottom-2 -left-[9px] h-4 w-4 rounded-full bg-cream-100" />
+                  </div>
+                  <div className="min-w-0 flex-1 px-4 py-4">
+                    <p className="text-[16px] font-bold leading-snug text-bark-900">{c.name}</p>
+                    <p className="mt-1 text-sm text-bark-600">
+                      {formatWon(c.minOrder)} 이상 주문 시
+                      {c.maxDiscount ? ` · 최대 ${formatWon(c.maxDiscount)}` : ""}
+                    </p>
+                    <p className="mt-2 text-xs text-bark-500">{c.expiresAt.replaceAll("-", ".")}까지</p>
+                  </div>
                 </div>
               ))}
             </div>

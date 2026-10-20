@@ -5,7 +5,8 @@ import { use } from "react";
 import { CheckCircle2, MapPin, PackageSearch, RotateCcw } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FarmGroupHeader from "@/components/FarmGroupHeader";
-import OrderTimeline from "@/components/OrderTimeline";
+import OrderTimeline, { DeliverySummary } from "@/components/OrderTimeline";
+import PurchaseSteps from "@/components/PurchaseSteps";
 import PriceSummary from "@/components/PriceSummary";
 import ProductImage from "@/components/ProductImage";
 import { getProduct } from "@/lib/data/products";
@@ -60,13 +61,14 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
           </p>
         </div>
       ) : (
-        <div className="flex flex-col items-center pt-4 text-center">
+        <div className="flex flex-col items-center text-center">
+          <PurchaseSteps current={2} className="mb-7" />
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-leaf-100 animate-check-pop">
             <CheckCircle2 className="h-11 w-11 text-leaf-700" strokeWidth={1.8} />
           </span>
           <h1 className="mt-5 text-xl font-bold tracking-tight text-bark-900 md:text-2xl">주문이 완료되었어요</h1>
           <p className="mt-2 text-[16px] leading-relaxed text-bark-600">
-            <b className="text-leaf-800">{arrival}</b>이에요. 농가에서 수확·포장해 바로 보내 드릴게요.
+            농가에서 수확·포장해 바로 보내 드릴게요.
           </p>
           <p className="mt-4 rounded-full bg-cream-200 px-4 py-1.5 text-sm font-semibold text-bark-600">
             주문번호 {order.orderNumber}
@@ -75,6 +77,7 @@ export default function OrderCompletePage({ params }: { params: Promise<{ id: st
       )}
 
       <div className={`${fresh ? "mt-8" : "mt-5"} space-y-4`}>
+        <DeliverySummary order={order} />
         <section className="rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="progress-title">
           <h2 id="progress-title" className="mb-4 text-base font-bold text-bark-900">
             주문 진행

@@ -25,6 +25,26 @@ export function cartKey(productId: string, optionLabel?: string): string {
   return `${productId}__${optionLabel ?? ""}`;
 }
 
+/**
+ * 장바구니에서 고른 항목 — 기본은 모두 고른 상태이고, 사용자가 해제한 것(unchecked 키)만 뺍니다.
+ * (새로 담은 상품이 '안 고른' 상태로 숨어 있다가 주문에서 빠지는 일이 없게, 해제한 것을 기억합니다.)
+ */
+export function selectedItems<T extends Pick<CartItem, "productId" | "optionLabel">>(
+  items: readonly T[],
+  unchecked: readonly string[]
+): T[] {
+  if (unchecked.length === 0) return [...items];
+  const off = new Set(unchecked);
+  return items.filter((i) => !off.has(cartKey(i.productId, i.optionLabel)));
+}
+
+/** 해제 목록 정리 — 글자만, 지금 장바구니에 있는 항목의 키만, 중복 없이 */
+export function sanitizeUnchecked(raw: unknown, items: readonly CartItem[]): string[] {
+  if (!Array.isArray(raw)) return [];
+  const keys = new Set(items.map((i) => cartKey(i.productId, i.optionLabel)));
+  return [...new Set(raw.filter((k): k is string => typeof k === "string" && keys.has(k)))];
+}
+
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 
 /**

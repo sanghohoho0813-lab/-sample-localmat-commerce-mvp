@@ -14,11 +14,12 @@ import { groupByFarm } from "@/lib/catalog";
 import { planForProducts } from "@/lib/delivery";
 import { formatWon, itemLabel, makeOrderNumber } from "@/lib/format";
 import { isoDate } from "@/lib/kst";
-import { orderableItems } from "@/lib/persisted";
+import { orderableItems, selectedItems } from "@/lib/persisted";
 import { couponOptions, summarize, unitPrice } from "@/lib/pricing";
 import { useBuyNowStore, useCartStore, useOrderStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
 import type { CartItem, Order, PaymentMethod, Product } from "@/lib/types";
+import PurchaseSteps from "@/components/PurchaseSteps";
 
 // 라벨을 네 글자로 맞춰 좁은 폰에서도 세 칸이 한 줄에 들어갑니다.
 const paymentMethods: { value: PaymentMethod; label: string; icon: typeof CreditCard }[] = [
@@ -56,14 +57,16 @@ function Checkout() {
   const buyNowMode = useSearchParams().get("mode") === "now";
 
   const cartItems = useCartStore((s) => s.items);
+  const unchecked = useCartStore((s) => s.unchecked);
   const removeFromCart = useCartStore((s) => s.removeItem);
   const buyNowItem = useBuyNowStore((s) => s.item);
   const clearBuyNow = useBuyNowStore((s) => s.set);
   const addOrder = useOrderStore((s) => s.addOrder);
   // 품절·시즌 준비 중인 상품은 장바구니에 남겨 두고 주문에서는 뺍니다.
   const items = useMemo(
-    () => orderableItems(buyNowMode ? (buyNowItem ? [buyNowItem] : []) : cartItems),
-    [buyNowMode, buyNowItem, cartItems]
+    // 장바구니에서 체크한 상품만 주문합니다(바로 구매는 그 상품 하나).
+    () => orderableItems(buyNowMode ? (buyNowItem ? [buyNowItem] : []) : selectedItems(cartItems, unchecked)),
+    [buyNowMode, buyNowItem, cartItems, unchecked]
   );
   const [itemsOpen, setItemsOpen] = useState(false);
 
@@ -172,9 +175,10 @@ function Checkout() {
 
   return (
     <div className="container-page py-6 md:py-8">
-      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
-        주문서
-      </h1>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2 md:mb-7">
+        <h1 className="text-xl font-bold tracking-tight text-bark-900 md:text-3xl">주문서</h1>
+        <PurchaseSteps current={1} />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <div className="space-y-4">

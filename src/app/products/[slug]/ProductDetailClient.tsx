@@ -1,9 +1,24 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, CalendarClock, ChevronRight, Leaf, MapPin, Refrigerator, ShoppingCart, Sprout, Star, Truck } from "lucide-react";
+import {
+  Box,
+  CalendarClock,
+  ChevronRight,
+  ChevronUp,
+  Expand,
+  Leaf,
+  MapPin,
+  Refrigerator,
+  ShoppingCart,
+  Sprout,
+  Star,
+  Truck,
+  X,
+} from "lucide-react";
 import Badge from "@/components/Badge";
 import { EtaLine } from "@/components/DeliveryEta";
 import FarmImage from "@/components/FarmImage";
@@ -72,6 +87,12 @@ export default function ProductDetailClient({ product, month }: { product: Produ
   const myReviews = useReviewStore((s) => s.reviews);
   const hydrated = useHydrated();
   const activeSection = useScrollSpy(SECTION_IDS);
+
+  // 모바일 옵션·수량 시트, 사진 크게 보기 — 둘 다 네이티브 <dialog>(최상위 레이어)로 띄웁니다.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const sheetRef = useModalDialog(sheetOpen);
+  const photoRef = useModalDialog(photoOpen);
 
   // 위쪽 구매 영역이 화면 밖으로 나가면 PC 오른쪽 고정 구매 상자를 띄웁니다.
   const purchaseRef = useRef<HTMLDivElement>(null);
@@ -171,14 +192,30 @@ export default function ProductDetailClient({ product, month }: { product: Produ
       <div className="grid grid-cols-1 gap-7 lg:grid-cols-2 lg:gap-12">
         {/* 사진 — 모바일은 화면 끝까지 꽉 채워(상용 커머스 앱처럼) 상품이 첫 화면을 이끌게 합니다. */}
         <div className="relative -mx-4 sm:-mx-6 md:mx-0 lg:sticky lg:top-32 lg:self-start">
-          <div className={`overflow-hidden bg-cream-200 md:rounded-3xl ${soldOut ? "opacity-70" : ""}`}>
+          <div className={`group relative overflow-hidden bg-cream-200 md:rounded-3xl ${soldOut ? "opacity-70" : ""}`}>
             <ProductImage
               product={product}
               priority
               sizes="(max-width: 1023px) 100vw, 600px"
-              className="w-full"
+              className="w-full transition-transform duration-500 md:group-hover:scale-[1.02]"
               iconSize="text-7xl"
             />
+            {/* 눌러서 크게 보기 — 신선식품은 색·결을 자세히 보고 싶어 합니다. 사진 위를 덮는 투명 버튼 */}
+            {product.image && (
+              <button
+                type="button"
+                onClick={() => setPhotoOpen(true)}
+                aria-label="사진 크게 보기"
+                className="absolute inset-0 cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-leaf-500 md:rounded-3xl"
+              >
+                <span
+                  className="pointer-events-none absolute bottom-16 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur md:bottom-4 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                  aria-hidden
+                >
+                  <Expand className="h-4 w-4" />
+                </span>
+              </button>
+            )}
           </div>
           {product.badges.length > 0 && (
             <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-1.5">
@@ -665,16 +702,186 @@ export default function ProductDetailClient({ product, month }: { product: Produ
           </div>
         ) : (
           // 글자를 키운 뒤에도 좁은 화면에서 잘리지 않도록 장바구니는 아이콘 버튼으로 둡니다.
-          <div className="flex items-center gap-2.5">
-            <button type="button" onClick={addToCart} aria-label="장바구니에 담기" className="btn-outline h-13 w-13 shrink-0 px-0">
-              <ShoppingCart className="h-[22px] w-[22px]" />
-            </button>
-            <button type="button" onClick={buyNow} className="btn-primary h-13 min-w-0 flex-1 text-[18px]">
-              {formatWon(total)} 바로 구매
-            </button>
-          </div>
+          <>
+            {/* 옵션·수량이 화면 밖으로 나가면, 무엇을 담게 되는지 바 위에 보여 주고 바로 바꿀 수 있게 합니다. */}
+            {showStickyBuy && (
+              <button
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl bg-cream-100 px-3.5 py-2.5 text-left animate-fade-up"
+              >
+                <span className="min-w-0 truncate text-sm text-bark-600">
+                  선택 <b className="font-semibold text-bark-900">{optionLabel ?? product.unit} · {quantity}개</b>
+                </span>
+                <span className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-leaf-700">
+                  변경
+                  <ChevronUp className="h-4 w-4" aria-hidden />
+                </span>
+              </button>
+            )}
+            <div className="flex items-center gap-2.5">
+              <button type="button" onClick={addToCart} aria-label="장바구니에 담기" className="btn-outline h-13 w-13 shrink-0 px-0">
+                <ShoppingCart className="h-[22px] w-[22px]" />
+              </button>
+              <button type="button" onClick={buyNow} className="btn-primary h-13 min-w-0 flex-1 text-[18px]">
+                {formatWon(total)} 바로 구매
+              </button>
+            </div>
+          </>
         )}
       </div>
+
+      {/* 모바일 옵션·수량 시트 */}
+      <dialog
+        ref={sheetRef}
+        aria-label="옵션·수량 선택"
+        onCancel={(e) => {
+          e.preventDefault();
+          setSheetOpen(false);
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setSheetOpen(false);
+        }}
+        className="m-0 h-full max-h-none w-full max-w-none items-end bg-transparent p-0 backdrop:bg-bark-900/40 open:flex md:hidden"
+      >
+        {sheetOpen && (
+          <div
+            className="flex max-h-[88dvh] w-full flex-col rounded-t-3xl bg-white animate-fade-up"
+            style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+          >
+            <span className="mx-auto mt-2.5 block h-1 w-10 rounded-full bg-bark-200" aria-hidden />
+            <div className="flex items-center gap-3 px-5 pb-3 pt-3">
+              <ProductImage product={product} className="w-12 shrink-0 rounded-lg" iconSize="text-lg" sizes="48px" />
+              {/* 단위는 고른 옵션에 따라 달라지므로 이름만 */}
+              <p className="min-w-0 flex-1 text-[16px] font-semibold leading-snug text-bark-900">{product.name}</p>
+              <button
+                type="button"
+                aria-label="닫기"
+                onClick={() => setSheetOpen(false)}
+                className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bark-500 hover:bg-cream-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+              {product.options && (
+                <fieldset>
+                  <legend className="mb-2 text-sm font-bold text-bark-800">옵션</legend>
+                  <div className="space-y-2">
+                    {product.options.map((o) => {
+                      const on = optionLabel === o.label;
+                      return (
+                        <button
+                          key={o.label}
+                          type="button"
+                          onClick={() => setOptionLabel(o.label)}
+                          aria-pressed={on}
+                          className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors duration-200 ${
+                            on ? "border-leaf-700 bg-leaf-50 ring-1 ring-leaf-700" : "border-bark-200 bg-white"
+                          }`}
+                        >
+                          <span className="min-w-0">
+                            <span className={`block text-[16px] ${on ? "font-bold text-leaf-900" : "font-semibold text-bark-800"}`}>
+                              {o.label}
+                            </span>
+                            {o.note && <span className="block text-sm text-bark-500">{o.note}</span>}
+                          </span>
+                          <span className="shrink-0 text-sm font-semibold text-bark-600">
+                            {formatWon(product.price + o.extraPrice)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <QuantityStepper value={quantity} onChange={setQuantity} max={maxQuantity} announce={false} />
+                <div className="text-right">
+                  <p className="text-sm text-bark-500">총 상품금액</p>
+                  <p className="text-xl font-bold tracking-tight text-bark-900 tabular-nums">{formatWon(total)}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-bark-600">
+                <EtaLine products={[product]} />
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 border-t border-bark-100 px-5 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  addToCart();
+                  setSheetOpen(false);
+                }}
+                className="btn-outline h-13 text-[16px] font-semibold"
+              >
+                <ShoppingCart className="h-[18px] w-[18px]" />
+                담기
+              </button>
+              <button type="button" onClick={buyNow} className="btn-primary h-13 text-[16px]">
+                바로 구매
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
+
+      {/* 사진 크게 보기 */}
+      <dialog
+        ref={photoRef}
+        aria-label={`${product.name} 사진`}
+        onCancel={(e) => {
+          e.preventDefault();
+          setPhotoOpen(false);
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setPhotoOpen(false);
+        }}
+        className="m-0 h-full max-h-none w-full max-w-none bg-bark-900 p-0 backdrop:bg-black/80 open:flex"
+      >
+        {photoOpen && product.image && (
+          <div className="relative flex h-full w-full flex-col">
+            <button
+              type="button"
+              aria-label="닫기"
+              onClick={() => setPhotoOpen(false)}
+              className="absolute right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur hover:bg-white/25"
+              style={{ top: "max(12px, env(safe-area-inset-top))" }}
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="relative min-h-0 flex-1 touch-pinch-zoom animate-fade-up">
+              <Image src={product.image} alt={product.name} fill sizes="100vw" className="object-contain" />
+            </div>
+            <p
+              className="px-5 pt-3 text-center text-sm text-white/80"
+              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+            >
+              {product.name} {product.unit} · {product.harvest}
+            </p>
+          </div>
+        )}
+      </dialog>
     </div>
   );
+}
+
+/** open 상태에 맞춰 <dialog>를 모달로 열고 닫으며, 열려 있는 동안 뒤 화면 스크롤을 잠급니다. */
+function useModalDialog(open: boolean) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (!open) {
+      if (dialog.open) dialog.close();
+      return;
+    }
+    if (!dialog.open) dialog.showModal();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+  return ref;
 }

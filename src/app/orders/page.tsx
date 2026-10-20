@@ -29,6 +29,14 @@ const statusLabels: Record<OrderStatus, { label: string; className: string }> = 
 
 const dayOf = (iso: string) => shortDay(parseIsoDate(iso));
 
+type OrderFilter = "all" | "active" | "delivered";
+const isActive = (status: OrderStatus) => status !== "delivered" && status !== "cancelled";
+const FILTERS: { id: OrderFilter; label: string; test: (status: OrderStatus) => boolean }[] = [
+  { id: "all", label: "전체", test: () => true },
+  { id: "active", label: "진행 중", test: isActive },
+  { id: "delivered", label: "배송 완료", test: (status) => status === "delivered" },
+];
+
 export default function OrdersPage() {
   const mounted = useHydrated();
 
@@ -41,6 +49,9 @@ export default function OrdersPage() {
   const reviewed = new Set(reviews.map((r) => reviewKey(r.orderId, r.productId)));
   const closeReview = useCallback(() => setReviewTarget(null), []);
   const reorder = useReorder();
+  const [filter, setFilter] = useState<OrderFilter>("all");
+  const activeFilter = FILTERS.find((f) => f.id === filter)!;
+  const shown = orders.filter((o) => activeFilter.test(o.status));
 
   return (
     <div className="container-page max-w-3xl py-6 md:py-8">
@@ -60,115 +71,143 @@ export default function OrdersPage() {
           action={{ label: "쇼핑하러 가기", href: "/products" }}
         />
       ) : (
-        <div className="space-y-4">
-          {orders.map((order) => {
-            const status = statusLabels[order.status];
-            const inProgress = order.status !== "delivered" && order.status !== "cancelled";
-            return (
-              <section key={order.id} className="overflow-hidden rounded-2xl bg-white">
-                <header className="flex items-center justify-between gap-2 border-b border-bark-100 py-1.5 pl-5 pr-2">
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                    <span className={`rounded-md px-2 py-0.5 text-sm font-bold ${status.className}`}>
-                      {status.label}
-                    </span>
-                    <span className="text-[16px] text-bark-500">{formatDate(order.createdAt)}</span>
-                  </div>
-                  <Link
-                    href={`/order-complete/${order.id}`}
-                    className="flex h-11 shrink-0 items-center rounded-lg px-2 text-sm font-medium text-bark-500 hover:text-leaf-700"
-                  >
-                    상세보기
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </header>
+        <>
+          {/* 상태별로 모아 보기 — 진행 중인 주문을 바로 찾을 수 있게 */}
+          <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:px-0" role="group" aria-label="주문 상태로 보기">
+            {FILTERS.map((f) => {
+              const count = orders.filter((o) => f.test(o.status)).length;
+              const on = filter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setFilter(f.id)}
+                  className={`flex h-10 shrink-0 items-center gap-1.5 rounded-pill border px-4 text-[15px] font-semibold transition-colors duration-200 ${
+                    on ? "border-bark-900 bg-bark-900 text-white" : "border-bark-200 bg-white text-bark-600 hover:border-bark-400"
+                  }`}
+                >
+                  {f.label}
+                  <span className={`tabular-nums ${on ? "text-white/75" : "text-bark-400"}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          {shown.length === 0 && (
+            <p className="rounded-2xl bg-white px-5 py-12 text-center text-[16px] text-bark-500">
+              {filter === "active" ? "지금 진행 중인 주문이 없어요." : "아직 받은 주문이 없어요."}
+            </p>
+          )}
+          <div className="space-y-4">
+            {shown.map((order) => {
+              const status = statusLabels[order.status];
+              const inProgress = order.status !== "delivered" && order.status !== "cancelled";
+              return (
+                <section key={order.id} className="overflow-hidden rounded-2xl bg-white">
+                  <header className="flex items-center justify-between gap-2 border-b border-bark-100 py-1.5 pl-5 pr-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                      <span className={`rounded-md px-2 py-0.5 text-sm font-bold ${status.className}`}>
+                        {status.label}
+                      </span>
+                      <span className="text-[16px] text-bark-500">{formatDate(order.createdAt)}</span>
+                    </div>
+                    <Link
+                      href={`/order-complete/${order.id}`}
+                      className="flex h-11 shrink-0 items-center rounded-lg px-2 text-sm font-medium text-bark-500 hover:text-leaf-700"
+                    >
+                      상세보기
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </header>
 
-                {/* 진행 중인 주문만 단계 표시 — 끝난 주문은 상태 배지로 충분합니다. */}
-                {inProgress && (
-                  <div className="border-b border-bark-100 px-5 pb-5 pt-4">
-                    <p className="mb-4 flex flex-wrap items-baseline gap-x-2 text-[16px] font-bold text-leaf-700">
-                      {dayOf(order.expectedDelivery)} 도착 예정
-                      {order.shipDate && order.status !== "shipping" && (
-                        <span className="text-sm font-medium text-bark-500">{dayOf(order.shipDate)} 산지 출고</span>
-                      )}
-                    </p>
-                    <OrderProgress status={order.status} />
-                  </div>
-                )}
+                  {/* 진행 중인 주문만 단계 표시 — 끝난 주문은 상태 배지로 충분합니다. */}
+                  {inProgress && (
+                    <div className="border-b border-bark-100 px-5 pb-5 pt-4">
+                      <p className="mb-4 flex flex-wrap items-baseline gap-x-2 text-[16px] font-bold text-leaf-700">
+                        {dayOf(order.expectedDelivery)} 도착 예정
+                        {order.shipDate && order.status !== "shipping" && (
+                          <span className="text-sm font-medium text-bark-500">{dayOf(order.shipDate)} 산지 출고</span>
+                        )}
+                      </p>
+                      <OrderProgress status={order.status} />
+                    </div>
+                  )}
 
-                <ul className="divide-y divide-bark-100 px-5">
-                  {order.items.map((item) => {
-                    const product = getProduct(item.productId);
-                    const done = reviewed.has(reviewKey(order.id, item.productId));
-                    return (
-                      <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex items-center gap-3.5 py-4">
-                        {product ? (
-                          <Link href={`/products/${product.slug}`} className="shrink-0">
-                            <ProductImage
-                              product={product}
-                              className="w-16 rounded-xl border border-bark-100"
-                              iconSize="text-2xl"
-                              sizes="64px"
-                            />
-                          </Link>
-                        ) : null}
-                        <div className="min-w-0 flex-1">
-                          {product && farmOf(product) && (
-                            <Link
-                              href={`/farms/${farmOf(product)!.slug}`}
-                              className="block truncate text-xs text-bark-500 hover:text-leaf-700"
-                            >
-                              {farmOf(product)!.name}
+                  <ul className="divide-y divide-bark-100 px-5">
+                    {order.items.map((item) => {
+                      const product = getProduct(item.productId);
+                      const done = reviewed.has(reviewKey(order.id, item.productId));
+                      return (
+                        <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex items-center gap-3.5 py-4">
+                          {product ? (
+                            <Link href={`/products/${product.slug}`} className="shrink-0">
+                              <ProductImage
+                                product={product}
+                                className="w-16 rounded-xl border border-bark-100"
+                                iconSize="text-2xl"
+                                sizes="64px"
+                              />
                             </Link>
-                          )}
-                          <p className="line-clamp-2 text-sm font-semibold leading-snug text-bark-800">
-                            {itemLabel(item.name, item.unit, item.optionLabel).title}
-                          </p>
-                          {itemLabel(item.name, item.unit, item.optionLabel).option && (
-                            <p className="mt-0.5 truncate text-sm text-bark-500">{item.optionLabel}</p>
-                          )}
-                          <p className="mt-0.5 text-sm text-bark-500">
-                            {item.quantity}개 · {formatWon(item.price * item.quantity)}
-                          </p>
-                        </div>
-                        {order.status === "delivered" &&
-                          product &&
-                          (done ? (
-                            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-leaf-700">
-                              <CheckCircle2 className="h-4 w-4" />
-                              작성 완료
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setReviewTarget({ orderId: order.id, product })}
-                              className="btn-outline h-11 shrink-0 px-3.5 text-sm font-semibold"
-                            >
-                              리뷰쓰기
-                            </button>
-                          ))}
-                      </li>
-                    );
-                  })}
-                </ul>
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            {product && farmOf(product) && (
+                              <Link
+                                href={`/farms/${farmOf(product)!.slug}`}
+                                className="block truncate text-xs text-bark-500 hover:text-leaf-700"
+                              >
+                                {farmOf(product)!.name}
+                              </Link>
+                            )}
+                            <p className="line-clamp-2 text-sm font-semibold leading-snug text-bark-800">
+                              {itemLabel(item.name, item.unit, item.optionLabel).title}
+                            </p>
+                            {itemLabel(item.name, item.unit, item.optionLabel).option && (
+                              <p className="mt-0.5 truncate text-sm text-bark-500">{item.optionLabel}</p>
+                            )}
+                            <p className="mt-0.5 text-sm text-bark-500">
+                              {item.quantity}개 · {formatWon(item.price * item.quantity)}
+                            </p>
+                          </div>
+                          {order.status === "delivered" &&
+                            product &&
+                            (done ? (
+                              <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-leaf-700">
+                                <CheckCircle2 className="h-4 w-4" />
+                                작성 완료
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setReviewTarget({ orderId: order.id, product })}
+                                className="btn-outline h-11 shrink-0 px-3.5 text-sm font-semibold"
+                              >
+                                리뷰쓰기
+                              </button>
+                            ))}
+                        </li>
+                      );
+                    })}
+                  </ul>
 
-                <footer className="flex items-center justify-between gap-3 border-t border-bark-100 py-2.5 pl-5 pr-3">
-                  <p className="text-[16px]">
-                    <span className="text-bark-500">결제 금액</span>{" "}
-                    <span className="font-bold text-bark-900">{formatWon(order.totalAmount)}</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => reorder(order.items)}
-                    className="btn-outline h-11 shrink-0 gap-1.5 px-3.5 text-sm font-semibold"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    다시 담기
-                  </button>
-                </footer>
-              </section>
-            );
-          })}
-        </div>
+                  <footer className="flex items-center justify-between gap-3 border-t border-bark-100 py-2.5 pl-5 pr-3">
+                    <p className="text-[16px]">
+                      <span className="text-bark-500">결제 금액</span>{" "}
+                      <span className="font-bold text-bark-900">{formatWon(order.totalAmount)}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => reorder(order.items)}
+                      className="btn-outline h-11 shrink-0 gap-1.5 px-3.5 text-sm font-semibold"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      다시 담기
+                    </button>
+                  </footer>
+                </section>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {reviewTarget && (

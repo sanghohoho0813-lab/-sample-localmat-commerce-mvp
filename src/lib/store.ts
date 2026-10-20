@@ -14,6 +14,7 @@ import {
   sanitizeProductIds,
   sanitizeReviews,
   sanitizeSearchHistory,
+  sanitizeUnchecked,
 } from "@/lib/persisted";
 
 export { maxQuantityFor };
@@ -52,6 +53,14 @@ export interface ReorderResult {
 
 interface CartState {
   items: CartItem[];
+  /** 주문에서 뺀(체크 해제한) 항목 키 — 기본은 모두 고른 상태 */
+  unchecked: string[];
+  setChecked: (key: string, checked: boolean) => void;
+  /** 전체 선택/해제 — keys를 주면 그 항목들만 */
+  setAllChecked: (checked: boolean, keys?: readonly string[]) => void;
+  /** 여러 개 한 번에 빼기(선택 삭제) — 되돌리기용으로 뺀 항목과 원래 자리를 돌려줍니다. */
+  removeItems: (keys: readonly string[]) => { item: CartItem; index: number }[];
+  restoreItems: (entries: readonly { item: CartItem; index: number }[]) => void;
   addItem: (productId: string, quantity: number, optionLabel?: string) => AddResult;
   updateQuantity: (productId: string, optionLabel: string | undefined, quantity: number) => void;
   removeItem: (productId: string, optionLabel?: string) => void;
@@ -68,6 +77,40 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      unchecked: [],
+      setChecked: (key, checked) =>
+        set((state) => ({
+          unchecked: checked ? state.unchecked.filter((k) => k !== key) : [...new Set([...state.unchecked, key])],
+        })),
+      setAllChecked: (checked, keys) =>
+        set((state) => {
+          const target = keys ?? state.items.map((i) => cartKey(i.productId, i.optionLabel));
+          return {
+            unchecked: checked
+              ? state.unchecked.filter((k) => !target.includes(k))
+              : [...new Set([...state.unchecked, ...target])],
+          };
+        }),
+      removeItems: (keys) => {
+        const removed = get()
+          .items.map((item, index) => ({ item, index }))
+          .filter(({ item }) => keys.includes(cartKey(item.productId, item.optionLabel)));
+        set((state) => ({
+          items: state.items.filter((i) => !keys.includes(cartKey(i.productId, i.optionLabel))),
+          unchecked: state.unchecked.filter((k) => !keys.includes(k)),
+        }));
+        return removed;
+      },
+      restoreItems: (entries) =>
+        set((state) => {
+          const items = [...state.items];
+          // 앞자리부터 끼워 넣어야 원래 순서가 됩니다.
+          for (const { item, index } of [...entries].sort((a, b) => a.index - b.index)) {
+            if (items.some((i) => cartKey(i.productId, i.optionLabel) === cartKey(item.productId, item.optionLabel))) continue;
+            items.splice(Math.min(index, items.length), 0, item);
+          }
+          return { items };
+        }),
       addItem: (productId, quantity, optionLabel) => {
         const max = maxQuantityFor(productId);
         if (max === 0) return { quantity: 0, capped: true, soldOut: true };
@@ -81,6 +124,8 @@ export const useCartStore = create<CartState>()(
                 cartKey(i.productId, i.optionLabel) === key ? { ...i, quantity: next } : i
               )
             : [...state.items, { productId, optionLabel, quantity: next }],
+          // 다시 담았다면 사려는 뜻이니 주문 대상으로 되돌립니다.
+          unchecked: state.unchecked.filter((k) => k !== key),
         }));
         return { quantity: next, capped: wanted > max, soldOut: false };
       },
@@ -97,6 +142,7 @@ export const useCartStore = create<CartState>()(
           items: state.items.filter(
             (i) => cartKey(i.productId, i.optionLabel) !== cartKey(productId, optionLabel)
           ),
+          unchecked: state.unchecked.filter((k) => k !== cartKey(productId, optionLabel)),
         })),
       restoreItem: (item, index) =>
         set((state) => {
@@ -139,16 +185,19 @@ export const useCartStore = create<CartState>()(
         }
         return result;
       },
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], unchecked: [] }),
     }),
     {
       name: "localmat-cart",
       version: STORAGE_VERSION,
       migrate: keepPersisted,
-      merge: (persisted, current) => ({
-        ...current,
-        items: sanitizeCartItems((persisted as Partial<CartState> | undefined)?.items),
-      }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<CartState> | undefined;
+        const items = sanitizeCartItems(saved?.items);
+        return { ...current, items, unchecked: sanitizeUnchecked(saved?.unchecked, items) };
+      },
+      // 함수는 저장하지 않고, 항목과 해제 목록만
+      partialize: (state) => ({ items: state.items, unchecked: state.unchecked }),
     }
   )
 );

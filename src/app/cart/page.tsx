@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { ShoppingCart, Ticket, Trash2 } from "lucide-react";
 import { EtaLine } from "@/components/DeliveryEta";
+import Checkbox from "@/components/Checkbox";
+import PurchaseSteps from "@/components/PurchaseSteps";
 import EmptyState from "@/components/EmptyState";
 import FarmGroupHeader from "@/components/FarmGroupHeader";
 import FreeShippingBar from "@/components/FreeShippingBar";
@@ -14,7 +16,7 @@ import { getFarm } from "@/lib/data/farms";
 import { getProduct, products } from "@/lib/data/products";
 import { groupByFarm } from "@/lib/catalog";
 import { formatWon, itemLabel } from "@/lib/format";
-import { orderableItems } from "@/lib/persisted";
+import { cartKey, orderableItems, selectedItems } from "@/lib/persisted";
 import { couponOptions, freeShippingGap, summarize, unitPrice as unitPriceOf } from "@/lib/pricing";
 import { cartSuggestions } from "@/lib/recommend";
 import { isAvailable } from "@/lib/season";
@@ -32,21 +34,31 @@ export default function CartPage() {
   const removeItem = useCartStore((s) => s.removeItem);
   const restoreItem = useCartStore((s) => s.restoreItem);
   const changeOption = useCartStore((s) => s.changeOption);
+  const unchecked = useCartStore((s) => s.unchecked);
+  const setChecked = useCartStore((s) => s.setChecked);
+  const setAllChecked = useCartStore((s) => s.setAllChecked);
+  const removeItems = useCartStore((s) => s.removeItems);
+  const restoreItems = useCartStore((s) => s.restoreItems);
   const showToast = useToastStore((s) => s.show);
 
   const visibleItems = useMemo(() => (hydrated ? items : []), [hydrated, items]);
   // 품절된 상품은 장바구니에 남겨 '품절'로 보여 주되, 금액·주문에서는 뺍니다.
   const orderable = useMemo(() => orderableItems(visibleItems), [visibleItems]);
+  // 금액·쿠폰·도착일·주문은 체크한 상품 기준입니다.
+  const selected = useMemo(() => selectedItems(orderable, unchecked), [orderable, unchecked]);
+  const isChecked = (item: CartItem) => !unchecked.includes(cartKey(item.productId, item.optionLabel));
+  const orderableKeys = orderable.map((i) => cartKey(i.productId, i.optionLabel));
+  const allChecked = orderable.length > 0 && selected.length === orderable.length;
   const soldOutCount = visibleItems.length - orderable.length;
-  const { itemsTotal, shippingFee } = summarize(orderable);
+  const { itemsTotal, shippingFee } = summarize(selected);
   // 주문서에서 자동으로 적용될 쿠폰을 미리 보여 줘, 장바구니 금액과 결제 금액이 달라 보이지 않게 합니다.
   const coupon = couponOptions(itemsTotal);
   const bestCoupon = coupon.usable[0];
-  const expected = summarize(orderable, bestCoupon?.coupon.id ?? null);
+  const expected = summarize(selected, bestCoupon?.coupon.id ?? null);
   const groups = groupByFarm(visibleItems);
-  const orderableProducts = orderable.map((i) => getProduct(i.productId)).filter((p): p is Product => !!p);
+  const selectedProducts = selected.map((i) => getProduct(i.productId)).filter((p): p is Product => !!p);
 
-  const suggestions = useMemo(() => cartSuggestions(orderable, itemsTotal), [orderable, itemsTotal]);
+  const suggestions = useMemo(() => cartSuggestions(selected, itemsTotal), [selected, itemsTotal]);
 
   // 빈 장바구니가 막다른 길이 되지 않게 — 최근 본 상품(살 수 있는 것)부터, 모자라면 많이 찾는 상품으로 채웁니다.
   const recentIds = useRecentStore((s) => s.ids);
@@ -68,6 +80,13 @@ export default function CartPage() {
     const index = items.indexOf(item);
     removeItem(item.productId, item.optionLabel);
     showToast("장바구니에서 뺐어요.", { label: "되돌리기", onClick: () => restoreItem(item, index) });
+  }
+
+  /** 여러 개 한꺼번에 빼기(선택 삭제·품절 모두 삭제) — 되돌리면 원래 자리로 */
+  function removeMany(keys: string[], message: string) {
+    if (keys.length === 0) return;
+    const removed = removeItems(keys);
+    showToast(message, { label: "되돌리기", onClick: () => restoreItems(removed) });
   }
 
   // 저장된 장바구니를 읽기 전에는 '0원 주문하기' 같은 빈 화면이 번쩍이지 않게 자리만 잡아 둡니다.
@@ -105,17 +124,54 @@ export default function CartPage() {
     );
   }
 
-  const checkoutLabel = orderable.length > 0 ? `${formatWon(expected.total)} 주문하기` : "주문할 수 있는 상품이 없어요";
+  const checkoutLabel =
+    selected.length > 0
+      ? `${formatWon(expected.total)} 주문하기`
+      : orderable.length > 0
+        ? "주문할 상품을 골라 주세요"
+        : "주문할 수 있는 상품이 없어요";
 
   return (
     <div className="container-page py-6 md:py-8">
-      <h1 className="mb-5 text-xl font-bold tracking-tight text-bark-900 md:mb-7 md:text-3xl">
-        장바구니 <span className="text-bark-400">{visibleItems.length}</span>
-      </h1>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2 md:mb-7">
+        <h1 className="text-xl font-bold tracking-tight text-bark-900 md:text-3xl">
+          장바구니 <span className="text-bark-400">{visibleItems.length}</span>
+        </h1>
+        <PurchaseSteps current={0} />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <div className="space-y-4">
-          {orderable.length > 0 && <FreeShippingBar itemsTotal={itemsTotal} />}
+          {/* 전체 선택 · 선택 삭제 */}
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white py-0.5 pl-2 pr-2 md:pl-3">
+            <Checkbox
+              checked={allChecked}
+              disabled={orderable.length === 0}
+              onChange={(checked) => setAllChecked(checked, orderableKeys)}
+            >
+              <span className="text-[15px] font-semibold text-bark-800">
+                전체 선택{" "}
+                <span className="font-medium text-bark-500 tabular-nums">
+                  {selected.length}/{orderable.length}
+                </span>
+              </span>
+            </Checkbox>
+            <button
+              type="button"
+              disabled={selected.length === 0}
+              onClick={() =>
+                removeMany(
+                  selected.map((i) => cartKey(i.productId, i.optionLabel)),
+                  `선택한 상품 ${selected.length}개를 뺐어요.`
+                )
+              }
+              className="h-10 rounded-lg px-3 text-sm font-medium text-bark-600 transition-colors hover:bg-cream-100 hover:text-bark-900 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              선택 삭제
+            </button>
+          </div>
+
+          {selected.length > 0 && <FreeShippingBar itemsTotal={itemsTotal} />}
 
           {soldOutCount > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-bark-200 bg-white px-4 py-3" role="status">
@@ -124,7 +180,12 @@ export default function CartPage() {
               </p>
               <button
                 type="button"
-                onClick={() => visibleItems.filter((i) => !orderable.includes(i)).forEach((i) => removeItem(i.productId, i.optionLabel))}
+                onClick={() =>
+                  removeMany(
+                    visibleItems.filter((i) => !orderable.includes(i)).map((i) => cartKey(i.productId, i.optionLabel)),
+                    `품절 상품 ${soldOutCount}개를 뺐어요.`
+                  )
+                }
                 className="h-9 shrink-0 rounded-lg bg-cream-100 px-3 text-sm font-semibold text-bark-700 hover:bg-cream-200"
               >
                 모두 삭제
@@ -150,7 +211,15 @@ export default function CartPage() {
                     const label = itemLabel(product.name, product.unit, item.optionLabel);
                     const max = maxQuantityFor(item.productId);
                     return (
-                      <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-3.5 py-4 md:gap-4">
+                      <li key={`${item.productId}-${item.optionLabel ?? ""}`} className="flex gap-2.5 py-4 md:gap-4">
+                        {/* 고르기 — 품절 상품은 고를 수 없습니다 */}
+                        <Checkbox
+                          checked={!soldOut && isChecked(item)}
+                          disabled={soldOut}
+                          onChange={(checked) => setChecked(cartKey(item.productId, item.optionLabel), checked)}
+                          label={soldOut ? `${label.title} (품절이라 고를 수 없어요)` : `${label.title} 고르기`}
+                          className="-my-2.5 -ml-2 shrink-0 self-start"
+                        />
                         <Link href={`/products/${product.slug}`} className="shrink-0">
                           <ProductImage
                             product={product}
@@ -243,7 +312,10 @@ export default function CartPage() {
         {/* 주문 요약 */}
         <aside className="lg:sticky lg:top-32" aria-label="주문 요약">
           <div className="rounded-2xl bg-white p-5">
-            <h2 className="text-base font-bold text-bark-900">주문 요약</h2>
+            <h2 className="flex items-baseline justify-between text-base font-bold text-bark-900">
+              주문 요약
+              <span className="text-sm font-medium text-bark-500">선택한 상품 {selected.length}개</span>
+            </h2>
             <dl className="mt-4 space-y-2.5 text-[15px]">
               <div className="flex justify-between text-bark-600">
                 <dt>상품금액</dt>
@@ -276,12 +348,12 @@ export default function CartPage() {
                 <dd className="text-xl font-bold text-tangerine-700">{formatWon(expected.total)}</dd>
               </div>
             </dl>
-            {orderableProducts.length > 0 && (
+            {selectedProducts.length > 0 && (
               <p className="mt-3 text-sm text-bark-600">
-                <EtaLine products={orderableProducts} />
+                <EtaLine products={selectedProducts} />
               </p>
             )}
-            {orderable.length > 0 ? (
+            {selected.length > 0 ? (
               <Link href="/checkout" className="btn-primary mt-5 hidden h-14 w-full text-[18px] md:flex">
                 {checkoutLabel}
               </Link>
@@ -318,7 +390,7 @@ export default function CartPage() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-bark-100 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        {orderable.length > 0 ? (
+        {selected.length > 0 ? (
           <Link href="/checkout" className="btn-primary h-13 w-full text-[18px]">
             {checkoutLabel}
           </Link>

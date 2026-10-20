@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import type { Order } from "@/lib/types";
-import { addDays, kstNow, parseIsoDate, shortDay } from "@/lib/kst";
+import { addDays, kstNow, parseIsoDate, relativeDay, shortDay } from "@/lib/kst";
 
 /** 주문 상태 → 몇 번째 단계까지 끝났는지 */
 const DONE_UNTIL: Record<Order["status"], number> = {
@@ -85,5 +85,50 @@ export default function OrderTimeline({ order }: { order: Order }) {
         </p>
       )}
     </div>
+  );
+}
+
+const SUMMARY_STEPS = ["주문 완료", "산지 출고", "배송 중", "도착"];
+
+/**
+ * 배송 요약 카드 — 언제 오는지 한눈에(큰 날짜) + 지금 몇 단계인지(가로 막대).
+ * 자세한 날짜는 아래 '주문 진행'에 있습니다. 저장값을 읽은 뒤(클라이언트)에만 그려 '내일' 같은 상대 날짜가 정확합니다.
+ */
+export function DeliverySummary({ order }: { order: Order }) {
+  const doneUntil = DONE_UNTIL[order.status];
+  if (doneUntil < 0) return null;
+  const arrive = parseIsoDate(order.expectedDelivery);
+  const ship = order.shipDate ? parseIsoDate(order.shipDate) : addDays(arrive, -1);
+  const delivered = order.status === "delivered";
+  const current = Math.min(doneUntil + 1, SUMMARY_STEPS.length - 1);
+  return (
+    <section className="overflow-hidden rounded-2xl bg-leaf-900 p-5 text-white md:p-6" aria-label="배송 요약">
+      <p className="text-sm font-medium text-white/75">{delivered ? "배송 완료" : "도착 예정"}</p>
+      <p className="mt-0.5 text-[28px] font-bold leading-tight tracking-tight">
+        {delivered ? shortDay(arrive) : relativeDay(arrive, kstNow().date)}
+      </p>
+      <p className="mt-1 text-sm text-white/80">
+        {delivered ? "문 앞에 도착했어요. 냉장 보관을 확인해 주세요." : `${shortDay(ship)} 산지에서 출고해 다음 날 도착해요.`}
+      </p>
+      <div className="mt-5" role="img" aria-label={`${SUMMARY_STEPS.length}단계 중 ${doneUntil + 1}단계 완료`}>
+        <div className="grid grid-cols-4 gap-1.5">
+          {SUMMARY_STEPS.map((step, i) => (
+            <span
+              key={step}
+              className={`h-1.5 rounded-full ${
+                i <= doneUntil ? "bg-leaf-300" : i === current ? "bg-white/50 motion-safe:animate-pulse" : "bg-white/15"
+              }`}
+            />
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
+          {SUMMARY_STEPS.map((step, i) => (
+            <span key={step} className={i <= doneUntil || i === current ? "font-semibold text-white" : "text-white/70"}>
+              {step}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

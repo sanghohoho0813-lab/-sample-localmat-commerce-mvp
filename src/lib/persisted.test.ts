@@ -7,6 +7,8 @@ import {
   sanitizeProductIds,
   sanitizeReviews,
   sanitizeSearchHistory,
+  sanitizeUnchecked,
+  selectedItems,
 } from "./persisted";
 
 describe("sanitizeCartItems", () => {
@@ -86,5 +88,20 @@ describe("sanitizeSearchHistory", () => {
     expect(sanitizeSearchHistory(Array.from({ length: 20 }, (_, i) => `검색${i}`))).toHaveLength(8);
     expect(sanitizeSearchHistory("not array")).toEqual([]);
     expect(sanitizeSearchHistory(["x".repeat(41)])).toEqual([]);
+  });
+});
+
+describe("장바구니 선택", () => {
+  const items = [
+    { productId: "p06", optionLabel: "3kg", quantity: 1 },
+    { productId: "p02", quantity: 2 },
+  ];
+  it("해제한 항목만 빼고 나머지는 고른 상태", () => {
+    expect(selectedItems(items, [])).toHaveLength(2);
+    expect(selectedItems(items, ["p06__3kg"]).map((i) => i.productId)).toEqual(["p02"]);
+  });
+  it("해제 목록은 지금 장바구니에 있는 항목 키만 남긴다", () => {
+    expect(sanitizeUnchecked(["p06__3kg", "p06__3kg", "p99__", 7], items)).toEqual(["p06__3kg"]);
+    expect(sanitizeUnchecked("broken", items)).toEqual([]);
   });
 });

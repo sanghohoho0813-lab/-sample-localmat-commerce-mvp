@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Order } from "@/lib/types";
 import { itemLabel } from "./format";
-import { isFreshOrder, withLiveDates } from "./orders";
+import { buyAgainItems, isFreshOrder, withLiveDates } from "./orders";
 
 const base: Order = {
   id: "seed-o05",
@@ -54,5 +54,30 @@ describe("itemLabel", () => {
   });
   it("그 밖의 옵션은 따로 둔다", () => {
     expect(itemLabel("한돈 삼겹살", "500g", "구이용")).toEqual({ title: "한돈 삼겹살 500g", option: "구이용" });
+  });
+});
+
+describe("buyAgainItems", () => {
+  const order = (id: string, createdAt: string, productIds: string[], status: Order["status"] = "delivered"): Order => ({
+    ...base,
+    id,
+    createdAt,
+    status,
+    items: productIds.map((productId) => ({ productId, name: productId, unit: "", quantity: 1, price: 1000 })),
+  });
+  it("최근 주문부터, 같은 상품은 한 번만", () => {
+    const list = buyAgainItems([
+      order("a", "2026-08-01T10:00:00+09:00", ["p01", "p02"]),
+      order("b", "2026-09-01T10:00:00+09:00", ["p02", "p03"]),
+    ]);
+    expect(list.map((e) => e.productId)).toEqual(["p02", "p03", "p01"]);
+    expect(list[0].orderedAt).toBe("2026-09-01T10:00:00+09:00");
+  });
+  it("취소한 주문은 빼고 개수를 제한한다", () => {
+    const list = buyAgainItems(
+      [order("a", "2026-08-01T10:00:00+09:00", ["p01", "p02", "p03"]), order("c", "2026-09-01T10:00:00+09:00", ["p09"], "cancelled")],
+      2
+    );
+    expect(list.map((e) => e.productId)).toEqual(["p01", "p02"]);
   });
 });

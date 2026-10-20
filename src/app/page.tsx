@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Clock, MapPin, ShieldCheck, Ticket, Truck, Wallet } from "lucide-react";
+import BuyAgain from "@/components/home/BuyAgain";
 import FarmOfWeek from "@/components/home/FarmOfWeek";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import RepurchaseList from "@/components/home/RepurchaseList";
@@ -93,6 +94,8 @@ export default function HomePage() {
           ))}
         </ul>
       </nav>
+
+      <BuyAgain />
 
       <RecentlyViewed />
 

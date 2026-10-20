@@ -13,6 +13,7 @@ const pages = [
   "/orders",
   "/order-complete/seed-o05",
   "/mypage",
+  "/mypage?tab=coupons",
 ];
 
 for (const path of pages) {

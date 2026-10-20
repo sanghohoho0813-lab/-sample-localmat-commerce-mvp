@@ -27,3 +27,31 @@ export function withLiveDates(order: Order, now: Date = new Date()): Order {
 export function isFreshOrder(order: Order, now: number = Date.now()): boolean {
   return !order.id.startsWith("seed-") && now - new Date(order.createdAt).getTime() < 30 * 60 * 1000;
 }
+
+export interface BuyAgainEntry {
+  productId: string;
+  optionLabel?: string;
+  /** 마지막으로 산 때 */
+  orderedAt: string;
+}
+
+/**
+ * '지난번에 산 상품' — 취소하지 않은 주문에서 최근에 산 것부터, 같은 상품은 한 번만.
+ * 지금 살 수 있는지(재고)는 상품 데이터를 아는 쪽(화면)에서 걸러 냅니다.
+ */
+export function buyAgainItems(orders: readonly Order[], limit = 8): BuyAgainEntry[] {
+  const seen = new Set<string>();
+  const result: BuyAgainEntry[] = [];
+  const sorted = [...orders]
+    .filter((o) => o.status !== "cancelled")
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  for (const order of sorted) {
+    for (const item of order.items) {
+      if (seen.has(item.productId)) continue;
+      seen.add(item.productId);
+      result.push({ productId: item.productId, optionLabel: item.optionLabel, orderedAt: order.createdAt });
+      if (result.length >= limit) return result;
+    }
+  }
+  return result;
+}

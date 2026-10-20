@@ -6,7 +6,7 @@ import MiraeLockup from "@/components/mirae/MiraeLockup";
 export default function Footer() {
   return (
     // 모바일 하단 여백: 하단 탭(64px) 또는 구매 바(73px)가 푸터 끝을 가리지 않을 만큼만 + 홈 인디케이터 영역
-    <footer className="border-t border-bark-100 bg-white pb-[calc(6rem+env(safe-area-inset-bottom))] pt-12 md:pb-0 md:pt-16">
+    <footer className="border-t border-bark-100 bg-white pb-[calc(8rem+env(safe-area-inset-bottom))] pt-12 md:pb-0 md:pt-16">
       {/* 리치 푸터 — 데스크톱 전용 */}
       <div className="container-page hidden gap-8 pb-10 md:grid md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
